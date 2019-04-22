@@ -19,11 +19,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef __DMLUA_H_INCLUDE__
-#define __DMLUA_H_INCLUDE__
+#ifndef LUAPB_ERRORCODE_H_INCLUDE_VERSION_1_0
+#define LUAPB_ERRORCODE_H_INCLUDE_VERSION_1_0
 
-#include "dmos.h"
-#include "dmlua_engine.h"
-#include "dmlua_luaresult.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif // __DMLUA_H_INCLUDE__
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+
+LUAMOD_API int luaopen_luapb(lua_State* L);
+
+LUAMOD_API int require_luapb(lua_State* L);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
