@@ -76,7 +76,9 @@
 
 static const Node dummynode_ = {
     {NILCONSTANT},  /* value */
-    {{NILCONSTANT, 0}}  /* key */
+    {
+        {NILCONSTANT, 0}
+    }  /* key */
 };
 
 

@@ -209,7 +209,7 @@
         LUA_LDIR"?.lua;"  LUA_LDIR"?/init.lua;" \
         LUA_CDIR"?.lua;"  LUA_CDIR"?/init.lua;" \
         "./?.lua;" "./?/init.lua;" \
-        "!\\..\\?.lua"
+        "!/../?.lua"
 
 #define LUA_CPATH_DEFAULT \
         LUA_CDIR"?.so;" LUA_CDIR"loadall.so;" "./?.so"

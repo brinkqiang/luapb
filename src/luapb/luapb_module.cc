@@ -1,5 +1,25 @@
 
-#include "luapb.h"
+// Copyright (c) 2018 brinkqiang (brink.qiang@gmail.com)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "luapb_module.h"
 #include "protoimporter.h"
 #include "lauxlib.h"
 
@@ -12,6 +32,23 @@
 #include <google/protobuf/compiler/importer.h>
 
 using namespace google::protobuf;
+
+typedef struct tagluamsg
+{
+	google::protobuf::Message* msg;
+	bool isDelete; //是否要释放掉这个msg;
+}lua_pbmsg;
+
+typedef struct tagluarepeatedmsg
+{
+	google::protobuf::Message* msg;
+	google::protobuf::FieldDescriptor* field;
+}lua_repeated_msg;
+
+#define PB_MESSAGE "pb"
+#define PB_MESSAGE_META "pb_meta"
+
+#define PB_REPEATED_MESSAGE_META "pb_repeated_meta"
 
 static int push_message(lua_State* L, 
 						Message* message, 
@@ -634,7 +671,7 @@ static const struct luaL_Reg repeatedlib[] = {
 	{NULL, NULL},
 };
 
-int luaopen_luapb(lua_State* L)
+LUAMOD_API int luaopen_luapb(lua_State* L)
 {
 	luaL_newmetatable(L, PB_REPEATED_MESSAGE_META); 
 	luaL_register(L, NULL, repeatedlib);
@@ -652,4 +689,11 @@ int luaopen_luapb(lua_State* L)
 
 	luaL_register(L, PB_MESSAGE, lib);
 	return 1;
+}
+
+LUAMOD_API int require_luapb(lua_State* L)
+{
+    luaL_requiref(L, "luapb", luaopen_luapb, 0);
+    printf("lua module: require luapb\n");
+    return 1;
 }
