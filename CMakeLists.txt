@@ -74,6 +74,7 @@ SET(LUAPB_VERSION "${LUAPB_VERSION_MAJOR}.${LUAPB_VERSION_MINOR}.${LUAPB_VERSION
 MESSAGE(STATUS "VERSION: ${LUAPB_VERSION}")
 
 ADD_DEFINITIONS(-DUSE_LUAPB)
+ADD_DEFINITIONS(-DLUA_COMPAT_MODULE)
 
 ModuleImport("dmprotobuf" "thirdparty/dmprotobuf")
 
@@ -130,10 +131,10 @@ IF (WIN32)
     ADD_LIBRARY(lua53 SHARED ${DMLUA_SOURCES})
     ADD_LIBRARY(luapb SHARED ${LUAPB_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/src/luapb/luapb_module.def)
 
-    TARGET_LINK_LIBRARIES(luapb lua53)
+    TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
     
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
-    TARGET_LINK_LIBRARIES(luapbtest luapb)
+    TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
     
     SET_TARGET_PROPERTIES(lua53 PROPERTIES COMPILE_FLAGS "-DLUA_BUILD_AS_DLL -DLUA_CORE")
     SET_TARGET_PROPERTIES(luapb PROPERTIES COMPILE_FLAGS "-DLUA_BUILD_AS_DLL -DLUA_LIB")
@@ -142,20 +143,20 @@ ELSEIF (APPLE)
     ADD_LIBRARY(lua53 SHARED ${DMLUA_SOURCES})
     ADD_LIBRARY(luapb SHARED ${LUAPB_SOURCES})
 
-    TARGET_LINK_LIBRARIES(luapb lua53)
+    TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
     
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
-    TARGET_LINK_LIBRARIES(luapbtest luapb)
+    TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
 
 
 ELSEIF (UNIX)
     ADD_LIBRARY(lua53 SHARED ${DMLUA_SOURCES})
     ADD_LIBRARY(luapb SHARED ${LUAPB_SOURCES})
 
-    TARGET_LINK_LIBRARIES(luapb lua53)
+    TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
     
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
-    TARGET_LINK_LIBRARIES(luapbtest luapb)
+    TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
 
 ENDIF ()
 
