@@ -38,7 +38,7 @@ ELSEIF (APPLE)
 
     SET(DMOS_NAME "mac") 
 
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -FPIC" )
 
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -g -D_DEBUG")
     SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
@@ -50,7 +50,7 @@ ELSEIF (UNIX)
  
     SET(DMOS_NAME "lin")
 
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -fPIC" )
 
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -g -D_DEBUG")
     SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
@@ -105,6 +105,10 @@ LIST(FILTER DMLUA_SOURCES EXCLUDE REGEX "lua.c$")
 LIST(FILTER DMLUA_SOURCES EXCLUDE REGEX "luac.c$")
 LIST(FILTER DMLUA_SOURCES EXCLUDE REGEX "wmain.c$")
 
+FILE(GLOB LUA_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/src/lua/lua.c
+)
+
 FILE(GLOB LUAPB_SOURCES
 ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
@@ -132,6 +136,9 @@ IF (WIN32)
     ADD_LIBRARY(luapb SHARED ${LUAPB_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/src/luapb/luapb_module.def)
 
     TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
+
+    ADD_EXECUTABLE(lua ${LUA_SOURCES})
+    TARGET_LINK_LIBRARIES(lua lua53)
     
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
     TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
@@ -144,7 +151,10 @@ ELSEIF (APPLE)
     ADD_LIBRARY(luapb SHARED ${LUAPB_SOURCES})
 
     TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
-    
+
+    ADD_EXECUTABLE(lua ${LUA_SOURCES})
+    TARGET_LINK_LIBRARIES(lua lua53)
+
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
     TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
 
@@ -154,7 +164,10 @@ ELSEIF (UNIX)
     ADD_LIBRARY(luapb SHARED ${LUAPB_SOURCES})
 
     TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
-    
+
+    ADD_EXECUTABLE(lua ${LUA_SOURCES})
+    TARGET_LINK_LIBRARIES(lua lua53)
+
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
     TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
 
