@@ -1,0 +1,35 @@
+// See README.txt for information and build instructions.
+//
+// Note: START and END tags are used in comments to define sections used in
+// tutorials.  They are not part of the syntax for Protocol Buffers.
+//
+// To get an in-depth walkthrough of this file and the related examples, see:
+// https://developers.google.com/protocol-buffers/docs/tutorials
+
+// [START declaration]
+syntax = "proto2";
+package net;
+
+
+// [START enums]
+enum MessageId {
+  MSGID_tb_Person = 1000;
+}
+
+enum PhoneType {
+MOBILE = 0;
+HOME = 1;
+WORK = 2;
+}
+// [END enums]
+
+// [START messages]
+message tb_Person {
+  optional MessageId __id = 1 [default = MSGID_tb_Person];
+  optional string number = 2;
+  optional string email = 3;
+  optional uint32 age = 4;
+  optional PhoneType ptype = 5;
+  repeated string desc = 6;
+}
+// [END messages]
