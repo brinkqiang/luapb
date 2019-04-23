@@ -37,8 +37,8 @@ ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systems")
 
     SET(DMOS_NAME "mac") 
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -fPIC -ldl -lm" )
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -fPIC -ldl -lm" )
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -fPIC" )
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -fPIC" )
 
     SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og -g -D_DEBUG")
     SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -g")
