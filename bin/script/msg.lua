@@ -48,3 +48,4 @@ function pbtest2()
     end
 end
 
+pbtest()
