@@ -22,7 +22,7 @@ Copyright (c) 2013-2018 brinkqiang (brink.qiang@gmail.com)
 [win-link]:  https://ci.appveyor.com/project/brinkqiang/luapb "AppVeyor build status"
 
 ## Intro
-luapb
+luapb  
 win lua ../script/msg.lua  
 linux lua script/msg.lua
 ```
