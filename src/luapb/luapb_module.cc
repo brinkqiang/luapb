@@ -378,9 +378,11 @@ static int pb_repeated_set(lua_State* L) {
 
 ///////////////////////////////////////////////////////////
 static int pb_import(lua_State* L) {
+    fprintf(stdout, "pb_import enter\n");
     const char* filename = luaL_checkstring(L, 1);
 
     ProtoImporter::Instance()->Import(filename);
+    fprintf(stdout, "pb_import leave\n");
     return 0;
 }
 

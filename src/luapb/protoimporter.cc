@@ -106,6 +106,7 @@ bool ProtoImporter::Import(const std::string& strFileName) {
     poProtoImporter = GetImporter();
 
     if (NULL == poProtoImporter) {
+        fprintf(stderr, "import (%s) file descriptor Importer is nil\n", strFileName.c_str());
         return false;
     }
 

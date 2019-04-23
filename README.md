@@ -23,6 +23,14 @@ Copyright (c) 2013-2018 brinkqiang (brink.qiang@gmail.com)
 
 ## Intro
 luapb
+win lua ../script/msg.lua  
+linux lua script/msg.lua
+```
+pb_import enter
+pb_import leave
+pbtest 1361563254513615632545@163.com (2first2second2three
+```
+
 ```cpp
 ```
 ## Contacts
