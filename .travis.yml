@@ -77,7 +77,8 @@ script:
   - popd
 
 after_success:
-  - "if [ -f bin/luapbtest ] ; then bin/luapbtest ; fi"
+  - cd bin
+  - "if [ -f lua ] ; then lua script/msg.lua ; fi"
 
 after_failure:
   - echo failure
@@ -90,7 +91,7 @@ deploy:
   provider: releases
   api_key:
     secure: $GITHUB_ACCESS_TOKEN
-  file: bin/luapbtest
+  file: bin/lua
   skip_cleanup: true
   on:
     branch: master
