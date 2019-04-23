@@ -6,8 +6,8 @@
 #
 
 # - clone code
-# git clone https://github.com/brinkqiang/dmlua.git
-# pushd dmlua
+# git clone https://github.com/brinkqiang/luapb.git
+# pushd luapb
 # git submodule update --init --recursive
 #
 
@@ -17,10 +17,12 @@
 # popd
 
 rm -rf build
-mkdir build
+mkdir -p build
 pushd build
+
 cmake -DCMAKE_BUILD_TYPE=relwithdebinfo ..
-cmake --build .
+cmake --build . --config relwithdebinfo
+
 popd
 
 # popd

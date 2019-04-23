@@ -11,7 +11,7 @@ compiler:
 # - clang
 os:
   - linux
-  - osx
+# - osx
 
 env:
 # - BUILD_TYPE=Debug
@@ -29,7 +29,7 @@ addons:
       - cmake
 #     - libtool
       - autoconf
-      - automake
+      - automake 
 #     - gcc-7
 #     - g++-7
 #     - clang-5.0
@@ -71,14 +71,13 @@ before_script:
     fi
 
 script:
-  - mkdir -p build && cd build
+  - mkdir -p build && pushd build
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
   - cmake --build .
-  - cd ..
+  - popd
 
 after_success:
-  - "if [ -f bin/dmluatest ] ; then bin/dmluatest ; fi"
-  - "if [ -f bin/dmluacheck ] ; then bin/dmluacheck ; fi"
+  - "if [ -f bin/luapbtest ] ; then bin/luapbtest ; fi"
 
 after_failure:
   - echo failure
@@ -91,7 +90,7 @@ deploy:
   provider: releases
   api_key:
     secure: $GITHUB_ACCESS_TOKEN
-  file: bin/dmluacheck
+  file: bin/luapbtest
   skip_cleanup: true
   on:
     branch: master
