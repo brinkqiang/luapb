@@ -10,8 +10,7 @@ compiler:
   - gcc
 # - clang
 os:
-  - centos
-# - linux
+  - linux
 # - osx
 
 env:
