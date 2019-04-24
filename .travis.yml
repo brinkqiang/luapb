@@ -78,7 +78,7 @@ script:
 
 after_success:
   - cd bin
-  - "if [ -f lua ] ; then lua script/msg.lua ; fi"
+  - "if [ -f lua ] ; then ./lua script/msg.lua ; fi"
 
 after_failure:
   - echo failure
