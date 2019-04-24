@@ -106,7 +106,7 @@ ELSEIF (UNIX)
     TARGET_LINK_LIBRARIES(luapb lua53 libprotobuf libprotoc)
 
     ADD_EXECUTABLE(lua ${LUA_SOURCES})
-    TARGET_LINK_LIBRARIES(lua lua53)
+    TARGET_LINK_LIBRARIES(lua lua53 m)
 
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
     TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
