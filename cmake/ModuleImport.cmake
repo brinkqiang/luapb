@@ -6,8 +6,15 @@ macro(ModuleImport ModuleName ModulePath)
 
     LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/bin)
     SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-    SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)  
-    ADD_SUBDIRECTORY(${ModulePath})
+    SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
+
+    IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/CMakeLists.txt)
+        ADD_SUBDIRECTORY(${ModulePath})
+    ELSEIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/cmake/CMakeLists.txt)
+        ADD_SUBDIRECTORY(${ModulePath}/cmake)
+    ELSE()
+        MESSAGE(FATAL_ERROR "ModuleImport ${ModuleName} CMakeLists.txt not exist.")
+    ENDIF()
 
     IF (WIN32)
         INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/src/windows)

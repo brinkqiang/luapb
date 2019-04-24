@@ -1,7 +1,7 @@
 
 macro(ModuleSetCompileOptions)
 
-IF (WIN32)
+  IF (WIN32)
     MESSAGE(STATUS "Now is windows")
 
     SET(DMOS_NAME "win")
@@ -22,19 +22,19 @@ IF (WIN32)
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF /OPT:NOICF /STACK:16777216")
 
     IF(MSVC)
-        ADD_DEFINITIONS(/bigobj)
-        ADD_DEFINITIONS(/DNOMINMAX /DWIN32_LEAN_AND_MEAN=1 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS)
+      ADD_DEFINITIONS(/bigobj)
+      ADD_DEFINITIONS(/DNOMINMAX /DWIN32_LEAN_AND_MEAN=1 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS)
 
-        ADD_COMPILE_OPTIONS(/W3 /wd4005 /wd4068 /wd4244 /wd4267 /wd4800)
-        IF (MSVC_VERSION GREATER_EQUAL 1900)
-            INCLUDE(CheckCXXCompilerFlag)
-            CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
-            IF (_cpp_latest_flag_supported)
-                ADD_COMPILE_OPTIONS("/std:c++latest")
-            ENDIF()
-    	ENDIF()
+      ADD_COMPILE_OPTIONS(/W3 /wd4005 /wd4068 /wd4244 /wd4267 /wd4800)
+      IF (MSVC_VERSION GREATER_EQUAL 1900)
+        INCLUDE(CheckCXXCompilerFlag)
+        CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
+        IF (_cpp_latest_flag_supported)
+          ADD_COMPILE_OPTIONS("/std:c++latest")
+        ENDIF()
+      ENDIF()
     ENDIF()
-ELSEIF (APPLE)
+  ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systems")
 
     SET(DMOS_NAME "mac") 
@@ -53,10 +53,10 @@ ELSEIF (APPLE)
 
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl -pthread -fPIC -ldl -lm" )
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl -pthread -fPIC -ldl -lm")
- 
-ELSEIF (UNIX)
+
+  ELSEIF (UNIX)
     MESSAGE(STATUS "Now is UNIX-like OS")
- 
+
     SET(DMOS_NAME "lin")
 
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" )
@@ -73,11 +73,11 @@ ELSEIF (UNIX)
 
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -fPIC -lrt -ldl -lm")
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}  -pthread -fPIC -lrt -ldl -lm")
- 
+
     FIND_PROGRAM(CCACHE_FOUND ccache)
     IF(CCACHE_FOUND)
-        SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-        SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+      SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+      SET_PROPERTY(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
     ENDIF(CCACHE_FOUND)
-ENDIF ()
-endmacro(ModuleImport)
+  ENDIF ()
+endmacro(ModuleSetCompileOptions)
