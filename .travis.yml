@@ -10,7 +10,8 @@ compiler:
   - gcc
 # - clang
 os:
-  - linux
+  - centos
+# - linux
 # - osx
 
 env:
@@ -30,8 +31,8 @@ addons:
 #     - libtool
       - autoconf
       - automake 
-#     - gcc-7
-#     - g++-7
+      - gcc-7
+      - g++-7
 #     - clang-5.0
 
 
