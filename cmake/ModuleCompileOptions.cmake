@@ -1,5 +1,10 @@
 
 macro(ModuleSetCompileOptions)
+  cmake_policy(SET CMP0022 NEW)
+
+  if(POLICY CMP0048)
+    cmake_policy(SET CMP0048 NEW)
+  endif()
 
   IF (WIN32)
     MESSAGE(STATUS "Now is windows")
@@ -73,6 +78,7 @@ macro(ModuleSetCompileOptions)
 
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
+    SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS}")
 
     FIND_PROGRAM(CCACHE_FOUND ccache)
     IF(CCACHE_FOUND)
