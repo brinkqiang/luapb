@@ -21,7 +21,6 @@
 
 #include "luapb_module.h"
 #include "protoimporter.h"
-#include "lauxlib.h"
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor_database.h>

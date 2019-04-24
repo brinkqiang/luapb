@@ -4,6 +4,9 @@ PROJECT(luapb)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 INCLUDE(cmake/ModuleImport.cmake)
 INCLUDE(cmake/ModuleCompileOptions.cmake)
+
+ModuleImport("dmprotobuf" "thirdparty/dmprotobuf")
+
 ModuleSetCompileOptions()
 
 SET(LUAPB_VERSION_MAJOR "1")
@@ -16,7 +19,6 @@ MESSAGE(STATUS "VERSION: ${LUAPB_VERSION}")
 ADD_DEFINITIONS(-DUSE_LUAPB)
 ADD_DEFINITIONS(-DLUA_COMPAT_MODULE)
 
-ModuleImport("dmprotobuf" "thirdparty/dmprotobuf")
 
 IF (WIN32)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/windows)
