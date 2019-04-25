@@ -7,7 +7,7 @@
 // https://developers.google.com/protocol-buffers/docs/tutorials
 
 // [START declaration]
-syntax = "proto2";
+syntax = "proto3";
 package net;
 
 
@@ -25,11 +25,11 @@ WORK = 2;
 
 // [START messages]
 message tb_Person {
-  optional MessageId __id = 1 [default = MSGID_tb_Person];
-  optional string number = 2;
-  optional string email = 3;
-  optional uint32 age = 4;
-  optional PhoneType ptype = 5;
+  MessageId __id = 1;
+  string number = 2;
+  string email = 3;
+  uint32 age = 4;
+  PhoneType ptype = 5;
   repeated string desc = 6;
 }
 // [END messages]
