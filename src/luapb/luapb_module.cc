@@ -48,7 +48,7 @@ typedef struct tagluarepeatedmsg {
 #define PB_REPEATED_MESSAGE_META "pb_repeated_meta"
 
 static int push_message(lua_State* L,
-                        Message* message,
+                        google::protobuf::Message* message,
                         bool del) {
     lua_pbmsg* tmp =
         static_cast<lua_pbmsg*>(lua_newuserdata(L, sizeof(lua_pbmsg)));
@@ -628,12 +628,47 @@ static int pb_serializeToString(lua_State* L) {
     return 1;
 }
 
+static int encode(lua_State *L){
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, -1, PB_MESSAGE_META);
+    Message* message = luamsg->msg;
+
+	std::string buffer;
+	if (!message->SerializeToString(&buffer)) {
+		printf("Failed to serialize message: proto.%s\n", lua_tostring(L, -2));
+	}
+
+	lua_pushlstring(L, buffer.c_str(), buffer.length());
+
+	return 1;
+}
+
+static int decode(lua_State *L) {
+	const std::string type_name(lua_tostring(L, -2));
+    Message* message = ProtoImporter::Instance()->CreateMessage(type_name);
+    if (NULL == message)
+    {
+        return 0;
+    }
+	size_t len;
+	const char *s = lua_tolstring(L, -1, &len);
+	std::string buffer(s, len);
+	if(!message->ParseFromString(buffer)) {
+		printf("Failed to parse message: proto.%s\n", lua_tostring(L, -2));
+	}
+
+    push_message(L, message, true);
+
+	return 1;
+}
+
 static const struct luaL_Reg lib[] = {
     {"new", pb_new},
     {"import", pb_import},
     {"tostring", pb_tostring},
     {"parseFromString", pb_parseFromString},
     {"serializeToString", pb_serializeToString},
+    {"decode", decode},
+	{"encode", encode},
     {NULL, NULL}
 };
 
