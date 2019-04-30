@@ -67,7 +67,7 @@ static int push_message(lua_State* L,
 
 static int push_repeated_msg(lua_State* L,
                             google::protobuf::Message* msg,
-                            google::protobuf::Message* field) {
+                            google::protobuf::FieldDescriptor* field) {
     lua_repeated_msg* repeated =
         static_cast<lua_repeated_msg*>(lua_newuserdata(L, sizeof(lua_repeated_msg)));
 
