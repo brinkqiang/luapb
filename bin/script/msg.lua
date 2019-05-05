@@ -62,6 +62,27 @@ function pbtest3()
 	local msg = pb.decode("net.tb_Person", buffer)
 
     print("pbtest " .. buffer)
+    print("pbtest " .. msg.age)
 end
 
+function pbtest4()
+    local msg = {}
+    msg.number = "13615632545"
+    msg.email = "13615632545@163.com"
+    msg.age = 28
+    msg.ptype = 2
+    msg.desc = {"first", "second", "three"}
+
+    for k, v in pairs(msg) do
+        print(type(v))
+        print(k)
+    end
+
+    --local buffer = pb.encode("net.tb_Person", msg)
+	--local msg = pb.decode("net.tb_Person", buffer)
+
+    --print("pbtest " .. buffer)
+    --print("pbtest " .. msg.age)
+end
 pbtest()
+pbtest4()
