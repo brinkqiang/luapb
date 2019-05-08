@@ -628,38 +628,195 @@ static int pb_serializeToString(lua_State* L) {
     return 1;
 }
 
-static int encode(lua_State *L){
-    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, -1, PB_MESSAGE_META);
-    google::protobuf::Message* message = luamsg->msg;
+/*******************************************************/
+/*  parse a message from a lua table                   */
+/*******************************************************/
+#define CASE_FIELD_TYPE(cpptype, protobuf_method, lua_method) \
+	case FieldDescriptor::CPPTYPE_##cpptype: { \
+		reflection->protobuf_method(msg, field, lua_method(L, -1));  \
+		break;\
+	} 
 
-	std::string buffer;
-	if (!message->SerializeToString(&buffer)) {
-		printf("Failed to serialize message: proto.%s\n", lua_tostring(L, -2));
-	}
-
-	lua_pushlstring(L, buffer.c_str(), buffer.length());
-
-	return 1;
+#define SWITCH_FIELD_TYPE(method_prefix, arg1, arg2) \
+switch(field->cpp_type()) {\
+	CASE_FIELD_TYPE(INT32, method_prefix##Int32, lua_tointeger)\
+	CASE_FIELD_TYPE(INT64, method_prefix##Int64, lua_tointeger)\
+	CASE_FIELD_TYPE(UINT32, method_prefix##UInt32, lua_tointeger)\
+	CASE_FIELD_TYPE(UINT64, method_prefix##UInt64, lua_tointeger)\
+	CASE_FIELD_TYPE(FLOAT, method_prefix##Float, lua_tonumber)\
+	CASE_FIELD_TYPE(DOUBLE, method_prefix##Double, lua_tonumber)\
+	CASE_FIELD_TYPE(BOOL, method_prefix##Bool, lua_toboolean)\
+	CASE_FIELD_TYPE(STRING, method_prefix##String, lua_tostring)\
+	case FieldDescriptor::CPPTYPE_ENUM: { \
+		const string name(lua_tostring(L, -1));\
+		const EnumValueDescriptor *valueDesc = field->enum_type()->FindValueByName(name);\
+		reflection->method_prefix##Enum(msg, field, valueDesc);  \
+		break;\
+	}\
+	case FieldDescriptor::CPPTYPE_MESSAGE: {\
+		const string &name = field->message_type()->full_name();\
+		Message* submsg = ProtoImporter::Instance()->CreateMessage(name);\
+		ParseMessage(L, submsg);\
+		reflection->method_prefix##AllocatedMessage(msg, arg1, arg2);\
+		break;\
+	}\
+	default: {\
+			printf("Unknown cpptype!\n");\
+            ProtoImporter::Instance()->ReleaseMessage(msg);\
+			break;\
+	}\
 }
 
-static int decode(lua_State *L) {
-	const std::string type_name(lua_tostring(L, -2));
-    google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(type_name);
-    if (NULL == message)
-    {
-        return 0;
+// have to set the message table at top of lua_state* L
+static void ParseMessage(lua_State* L, Message* msg) {
+
+    const Descriptor* descriptor = msg->GetDescriptor();
+    const Reflection* reflection = msg->GetReflection();
+    for (int i = 0; i < descriptor->field_count(); i++) {
+        const FieldDescriptor* field = descriptor->field(i);
+        const string& name = field->name();
+
+        lua_getfield(L, -1, name.c_str());
+
+        if (lua_isnil(L, -1) && field->is_required()) {
+            printf("Error: a required field in message is missing!\n");
+            ProtoImporter::Instance()->ReleaseMessage(msg);
+            return;
+        }
+
+        if (!lua_isnil(L, -1)) {
+            if (field->is_repeated()) {
+                lua_pushnil(L);
+                while (lua_next(L, -2) != 0) {
+                    SWITCH_FIELD_TYPE(Add, field, submsg)
+                        lua_pop(L, 1);
+                }
+
+            }
+            else {
+                SWITCH_FIELD_TYPE(Set, submsg, field)
+            }
+        }
+
+        lua_pop(L, 1);
     }
-	size_t len;
-	const char *s = lua_tolstring(L, -1, &len);
-	std::string buffer(s, len);
-	if(!message->ParseFromString(buffer)) {
-		printf("Failed to parse message: proto.%s\n", lua_tostring(L, -2));
+}
+
+#undef SWITCH_FIELD_TYPE
+#undef CASE_FIELD_TYPE
+
+/*******************************************************/
+/*  write a protobuf class object into a lua table     */
+/*******************************************************/
+#define CASE_FIELD_TYPE(cpptype, lua_method, protobuf_method, ...) \
+	case FieldDescriptor::CPPTYPE_##cpptype:\
+			lua_method(L, reflection->protobuf_method((*pmsg), field, ##__VA_ARGS__));\
+		break;
+
+#define SWITCH_FIELD_TYPE(prefix, ...) \
+	switch(field->cpp_type()) { \
+		CASE_FIELD_TYPE(INT32, lua_pushinteger, prefix##Int32, ##__VA_ARGS__) \
+		CASE_FIELD_TYPE(INT64, lua_pushinteger, prefix##Int64, ##__VA_ARGS__) \
+		CASE_FIELD_TYPE(UINT32, lua_pushinteger, prefix##UInt32, ##__VA_ARGS__) \
+		CASE_FIELD_TYPE(UINT64, lua_pushinteger, prefix##UInt64, ##__VA_ARGS__) \
+		CASE_FIELD_TYPE(FLOAT, lua_pushnumber, prefix##Float, ##__VA_ARGS__) \
+		CASE_FIELD_TYPE(DOUBLE, lua_pushnumber, prefix##Double, ##__VA_ARGS__) \
+		CASE_FIELD_TYPE(BOOL, lua_pushboolean, prefix##Bool, ##__VA_ARGS__) \
+		case FieldDescriptor::CPPTYPE_ENUM: \
+			lua_pushstring(L, reflection->prefix##Enum((*pmsg), field, ##__VA_ARGS__)->name().c_str());\
+			break; \
+		case FieldDescriptor::CPPTYPE_STRING: \
+			lua_pushstring(L, reflection->prefix##String((*pmsg), field, ##__VA_ARGS__).c_str());\
+			break; \
+		case FieldDescriptor::CPPTYPE_MESSAGE: \
+			WriteMessage(L, &reflection->prefix##Message((*pmsg), field, ##__VA_ARGS__)); \
+			break; \
+		default: \
+			printf("Unknown field!\n");\
+			break; \
 	}
 
-    push_message(L, message, true);
+static void WriteMessage(lua_State* L, const Message* pmsg) {
+    const Descriptor* descriptor = pmsg->GetDescriptor();
+    const Reflection* reflection = pmsg->GetReflection();
 
-	return 1;
+    lua_createtable(L, 0, descriptor->field_count());
+    for (int i = 0; i < descriptor->field_count(); i++) {
+        const FieldDescriptor* field = descriptor->field(i);
+        const string& name = field->name();
+
+        lua_pushstring(L, name.c_str());
+
+        bool flag = true;
+        if (field->is_repeated()) {
+            lua_createtable(L, reflection->FieldSize((*pmsg), field), 0);
+            for (int j = 0; j < reflection->FieldSize((*pmsg), field); j++) {
+                lua_pushinteger(L, j + 1);
+                SWITCH_FIELD_TYPE(GetRepeated, j)
+                    lua_settable(L, -3);
+            }
+            if (reflection->FieldSize((*pmsg), field) == 0) {
+                lua_pop(L, 1);
+                flag = false;
+            }
+
+        }
+        else {
+            //if (reflection->HasField((*pmsg), field)) {
+            SWITCH_FIELD_TYPE(Get)
+            //} else {
+            //	flag = false;	
+            //}
+        }
+        if (flag) {
+            lua_settable(L, -3);
+        }
+        else {
+            lua_pop(L, 1);
+        }
+    }
 }
+
+#undef SWITCH_FIELD_TYPE
+#undef CASE_FIELD_TYPE
+
+
+/*****************************************************************************************/
+/*  lua interface for encoding a lua table message into a binary protobuf string buffer  */
+/*****************************************************************************************/
+static int encode(lua_State *L) {
+    const string name(lua_tostring(L, -2));
+    google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(name);
+    ParseMessage(L, message);
+
+    string buffer;
+    if (!message->SerializeToString(&buffer)) {
+        printf("Failed to serialize message: nbaproto.%s\n", lua_tostring(L, -2));
+    }
+    lua_pushlstring(L, buffer.c_str(), buffer.length());
+
+    ProtoImporter::Instance()->ReleaseMessage(message);
+    return 1;
+}
+
+/*****************************************************************************************/
+/*  lua interface for decoding a binary protobuf string buffer into a lua table message  */
+/*****************************************************************************************/
+static int decode(lua_State *L) {
+    const string name(lua_tostring(L, -2));
+    google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(name);
+    size_t len;
+    const char *s = lua_tolstring(L, -1, &len);
+    string buffer(s, len);
+    if (!message->ParseFromString(buffer)) {
+        printf("Failed to parse message: nbaproto.%s\n", lua_tostring(L, -2));
+    }
+
+    WriteMessage(L, message);
+    ProtoImporter::Instance()->ReleaseMessage(message);
+    return 1;
+}
+
 
 static const struct luaL_Reg lib[] = {
     {"new", pb_new},

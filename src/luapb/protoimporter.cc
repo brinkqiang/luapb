@@ -74,6 +74,15 @@ google::protobuf::Message* ProtoImporterImpl::CreateMessage(
     return message;
 }
 
+void ProtoImporterImpl::ReleaseMessage(google::protobuf::Message* message) {
+    if (NULL != message)
+    {
+        message->Clear();
+        delete message;
+        message = NULL;
+    }
+}
+
 ProtoImporter::ProtoImporter() {
     std::string strRoot = DMGetRootPath();
     std::string strProtoPath = strRoot + PATH_DELIMITER_STR + "proto";
@@ -116,4 +125,9 @@ bool ProtoImporter::Import(const std::string& strFileName) {
 google::protobuf::Message* ProtoImporter::CreateMessage(
     const std::string& strTypeName) {
     return m_poProtoImporter->CreateMessage(strTypeName);
+}
+
+void ProtoImporter::ReleaseMessage(google::protobuf::Message* message)
+{
+    m_poProtoImporter->ReleaseMessage(message);
 }

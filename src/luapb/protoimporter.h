@@ -16,6 +16,8 @@ class ProtoImporterImpl {
   public:
     bool Import(const std::string& strFileName);
     google::protobuf::Message* CreateMessage(const std::string& strTypeName);
+    void ReleaseMessage(google::protobuf::Message* message);
+
   public:
     google::protobuf::compiler::Importer m_oImporter;
     google::protobuf::DynamicMessageFactory m_oFactory;
@@ -29,7 +31,7 @@ class ProtoImporter : public TSingleton<ProtoImporter> {
 
     bool Import(const std::string& strFileName);
     google::protobuf::Message* CreateMessage(const std::string& strTypeName);
-
+    void ReleaseMessage(google::protobuf::Message* message);
     ProtoImporterImpl* GetImporter() {
         return m_poProtoImporter;
     }
