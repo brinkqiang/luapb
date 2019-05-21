@@ -797,7 +797,7 @@ static int encode(lua_State *L) {
 
     std::string buffer;
     if (!message->SerializeToString(&buffer)) {
-        printf("Failed to serialize message: nbaproto.%s\n", lua_tostring(L, -2));
+        printf("Failed to serialize message: proto.%s\n", lua_tostring(L, -2));
     }
     lua_pushlstring(L, buffer.c_str(), buffer.length());
 
@@ -819,7 +819,7 @@ static int decode(lua_State *L) {
     const char *s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
     if (!message->ParseFromString(buffer)) {
-        printf("Failed to parse message: nbaproto.%s\n", lua_tostring(L, -2));
+        printf("Failed to parse message: proto.%s\n", lua_tostring(L, -2));
     }
 
     WriteMessage(L, message);
