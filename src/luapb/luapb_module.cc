@@ -648,13 +648,13 @@ switch(field->cpp_type()) {\
 	CASE_FIELD_TYPE(BOOL, method_prefix##Bool, lua_toboolean)\
 	CASE_FIELD_TYPE(STRING, method_prefix##String, lua_tostring)\
 	case FieldDescriptor::CPPTYPE_ENUM: { \
-		const string name(lua_tostring(L, -1));\
+		const std::string name(lua_tostring(L, -1));\
 		const EnumValueDescriptor *valueDesc = field->enum_type()->FindValueByName(name);\
 		reflection->method_prefix##Enum(msg, field, valueDesc);  \
 		break;\
 	}\
 	case FieldDescriptor::CPPTYPE_MESSAGE: {\
-		const string &name = field->message_type()->full_name();\
+		const std::string &name = field->message_type()->full_name();\
 		Message* submsg = ProtoImporter::Instance()->CreateMessage(name);\
 		ParseMessage(L, submsg);\
 		reflection->method_prefix##AllocatedMessage(msg, arg1, arg2);\
@@ -674,7 +674,7 @@ static void ParseMessage(lua_State* L, Message* msg) {
     const Reflection* reflection = msg->GetReflection();
     for (int i = 0; i < descriptor->field_count(); i++) {
         const FieldDescriptor* field = descriptor->field(i);
-        const string& name = field->name();
+        const std::string& name = field->name();
 
         lua_getfield(L, -1, name.c_str());
 
@@ -743,7 +743,7 @@ static void WriteMessage(lua_State* L, const Message* pmsg) {
     lua_createtable(L, 0, descriptor->field_count());
     for (int i = 0; i < descriptor->field_count(); i++) {
         const FieldDescriptor* field = descriptor->field(i);
-        const string& name = field->name();
+        const std::string& name = field->name();
 
         lua_pushstring(L, name.c_str());
 
@@ -785,11 +785,17 @@ static void WriteMessage(lua_State* L, const Message* pmsg) {
 /*  lua interface for encoding a lua table message into a binary protobuf string buffer  */
 /*****************************************************************************************/
 static int encode(lua_State *L) {
-    const string name(lua_tostring(L, -2));
+    const std::string name(lua_tostring(L, -2));
     google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(name);
+    if (NULL == message)
+    {
+        luaL_argerror(L, (2),
+            "encode !!");
+        return 0;
+    }
     ParseMessage(L, message);
 
-    string buffer;
+    std::string buffer;
     if (!message->SerializeToString(&buffer)) {
         printf("Failed to serialize message: nbaproto.%s\n", lua_tostring(L, -2));
     }
@@ -803,11 +809,15 @@ static int encode(lua_State *L) {
 /*  lua interface for decoding a binary protobuf string buffer into a lua table message  */
 /*****************************************************************************************/
 static int decode(lua_State *L) {
-    const string name(lua_tostring(L, -2));
+    const std::string name(lua_tostring(L, -2));
     google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(name);
+    if (NULL == message)
+    {
+        return 0;
+    }
     size_t len;
     const char *s = lua_tolstring(L, -1, &len);
-    string buffer(s, len);
+    std::string buffer(s, len);
     if (!message->ParseFromString(buffer)) {
         printf("Failed to parse message: nbaproto.%s\n", lua_tostring(L, -2));
     }
