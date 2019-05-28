@@ -23,7 +23,9 @@ Copyright (c) 2013-2018 brinkqiang (brink.qiang@gmail.com)
 
 ## Intro
 luapb  
-win lua ../script/msg.lua  
+
+win lua ..\script\msg.lua  
+
 linux lua script/msg.lua
 ```
 pb_import enter
