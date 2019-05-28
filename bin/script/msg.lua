@@ -59,7 +59,7 @@ function pbtest3()
     msg.desc:add("three")
 
     local buffer = pb.encode("net.tb_Person", msg)
-	local msg = pb.decode("net.tb_Person", buffer)
+    local msg = pb.decode("net.tb_Person", buffer)
     local binstr = pb.serializeToString(msg)
     print("luapb pbtest " .. buffer)
     print("luapb binstr " .. binstr)  
@@ -89,7 +89,8 @@ local function pbtest4()
     assert(msg.desc[1] == "first")
     assert(msg.desc[2] == "second")
     assert(msg.desc[3] == "three")
-    print(buffer)
+
+    print("pbtest " .. buffer)
 end
 
 pbtest()
