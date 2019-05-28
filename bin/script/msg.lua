@@ -59,7 +59,7 @@ function pbtest3()
     msg.desc:add("three")
 
     local buffer = pb.encode("net.tb_Person", msg)
-	local msg = pb.decode("net.tb_Person", buffer)
+    local msg = pb.decode("net.tb_Person", buffer)
     local binstr = pb.serializeToString(msg)
     print("luapb pbtest " .. buffer)
     print("luapb binstr " .. binstr)  
@@ -79,7 +79,7 @@ function pbtest4()
     end
 
     --local buffer = pb.encode("net.tb_Person", msg)
-	--local msg = pb.decode("net.tb_Person", buffer)
+    --local msg = pb.decode("net.tb_Person", buffer)
 
     --print("pbtest " .. buffer)
     --print("pbtest " .. msg.age)
