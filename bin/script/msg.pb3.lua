@@ -58,7 +58,19 @@ local message = {
     desc = {"first", "second", "three"}
 }
 
-local function pbtest4()
+function pbtest3()
+    local message = {
+        number = "13615632545",
+        email = "13615632545@163.com",
+        age = 28,
+        ptype = "WORK",
+        desc = {"first", "second", "three"}
+    }
+    for k, v in pairs(message) do
+        print(type(v))
+        print(k)
+    end
+
     local buffer = pb.encode("net.tb_Person", message)
     local msg = pb.decode("net.tb_Person", buffer)
 
@@ -69,7 +81,8 @@ local function pbtest4()
     assert(msg.desc[1] == "first")
     assert(msg.desc[2] == "second")
     assert(msg.desc[3] == "three")
-    print(buffer)
+
+    print("pbtest3 " .. buffer)
 end
 
-pbtest4()
+pbtest3()

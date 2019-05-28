@@ -48,25 +48,7 @@ function pbtest2()
     end
 end
 
-function pbtest3()
-    local msg = pb.new("net.tb_Person")
-    msg.number = "luapb"
-    msg.email = "luapb@163.com"
-    msg.age2 = 28
-    msg.ptype = 2
-    msg.desc:add("first")
-    msg.desc:add("second")
-    msg.desc:add("three")
-
-    local buffer = pb.encode("net.tb_Person", msg)
-    local msg = pb.decode("net.tb_Person", buffer)
-    local binstr = pb.serializeToString(msg)
-    print("luapb pbtest " .. buffer)
-    print("luapb binstr " .. binstr)  
-end
-
-
-local function pbtest4()
+function pbtest3() 
     local message = {
         number = "13615632545",
         email = "13615632545@163.com",
@@ -90,9 +72,9 @@ local function pbtest4()
     assert(msg.desc[2] == "second")
     assert(msg.desc[3] == "three")
 
-    print("pbtest " .. buffer)
+    print("pbtest3 " .. buffer)
 end
 
 pbtest()
-pbtest4()
+pbtest3()
 
