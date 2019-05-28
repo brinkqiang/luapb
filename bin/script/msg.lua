@@ -65,24 +65,33 @@ function pbtest3()
     print("luapb binstr " .. binstr)  
 end
 
-function pbtest4()
-    local msg = {}
-    msg.number = "luaprotobuf"
-    msg.email = "luaprotobuf@163.com"
-    msg.age = 28
-    msg.ptype = 2
-    msg.desc = {"first", "second", "three"}
 
-    for k, v in pairs(msg) do
+local function pbtest4()
+    local message = {
+        number = "13615632545",
+        email = "13615632545@163.com",
+        age = 28,
+        ptype = "WORK",
+        desc = {"first", "second", "three"}
+    }
+    for k, v in pairs(message) do
         print(type(v))
         print(k)
     end
 
-    --local buffer = pb.encode("net.tb_Person", msg)
-	--local msg = pb.decode("net.tb_Person", buffer)
+    local buffer = pb.encode("net.tb_Person", message)
+    local msg = pb.decode("net.tb_Person", buffer)
 
-    --print("pbtest " .. buffer)
-    --print("pbtest " .. msg.age)
+    assert(msg.number == "13615632545")
+    assert(msg.email == "13615632545@163.com")
+    assert(msg.age == 28)
+    assert(msg.ptype == "WORK")
+    assert(msg.desc[1] == "first")
+    assert(msg.desc[2] == "second")
+    assert(msg.desc[3] == "three")
+    print(buffer)
 end
+
 pbtest()
-pbtest3()
+pbtest4()
+
