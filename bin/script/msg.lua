@@ -78,11 +78,11 @@ function pbtest4()
         print(k)
     end
 
-    --local buffer = pb.encode("net.tb_Person", msg)
-    --local msg = pb.decode("net.tb_Person", buffer)
+    local buffer = pb.encode("net.tb_Person", msg)
+    local msg = pb.decode("net.tb_Person", buffer)
 
-    --print("pbtest " .. buffer)
-    --print("pbtest " .. msg.age)
+    print("pbtest " .. buffer)
+    print("pbtest " .. msg.age)
 end
 pbtest()
 pbtest3()
