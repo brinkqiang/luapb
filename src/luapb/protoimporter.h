@@ -23,11 +23,11 @@ class ProtoImporterImpl {
     google::protobuf::DynamicMessageFactory m_oFactory;
 };
 
-class ProtoImporter : public TSingleton<ProtoImporter> {
-    friend class TSingleton<ProtoImporter>;
+class ProtoImporterMgr : public TSingleton<ProtoImporterMgr> {
+    friend class TSingleton<ProtoImporterMgr>;
   public:
-    ProtoImporter();
-    virtual ~ProtoImporter();
+    ProtoImporterMgr();
+    virtual ~ProtoImporterMgr();
 
     bool Import(const std::string& strFileName);
     google::protobuf::Message* CreateMessage(const std::string& strTypeName);

@@ -83,7 +83,7 @@ void ProtoImporterImpl::ReleaseMessage(google::protobuf::Message* message) {
     }
 }
 
-ProtoImporter::ProtoImporter() {
+ProtoImporterMgr::ProtoImporterMgr() {
     std::string strRoot = DMGetRootPath();
     std::string strProtoPath = strRoot + PATH_DELIMITER_STR + "proto";
     std::string strProtoPath2 = strRoot + PATH_DELIMITER_STR + ".." +
@@ -99,11 +99,11 @@ ProtoImporter::ProtoImporter() {
     SetImporter(new ProtoImporterImpl());
 }
 
-ProtoImporter::~ProtoImporter() {
+ProtoImporterMgr::~ProtoImporterMgr() {
 
 }
 
-bool ProtoImporter::Import(const std::string& strFileName) {
+bool ProtoImporterMgr::Import(const std::string& strFileName) {
     ProtoImporterImpl* poProtoImporter = GetImporter();
 
     if (NULL != poProtoImporter) {
@@ -122,12 +122,12 @@ bool ProtoImporter::Import(const std::string& strFileName) {
     return poProtoImporter->Import(strFileName);
 }
 
-google::protobuf::Message* ProtoImporter::CreateMessage(
+google::protobuf::Message* ProtoImporterMgr::CreateMessage(
     const std::string& strTypeName) {
     return m_poProtoImporter->CreateMessage(strTypeName);
 }
 
-void ProtoImporter::ReleaseMessage(google::protobuf::Message* message)
+void ProtoImporterMgr::ReleaseMessage(google::protobuf::Message* message)
 {
     m_poProtoImporter->ReleaseMessage(message);
 }
