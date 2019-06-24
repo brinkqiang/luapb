@@ -380,14 +380,14 @@ static int pb_import(lua_State* L) {
     fprintf(stdout, "pb_import enter\n");
     const char* filename = luaL_checkstring(L, 1);
 
-    ProtoImporter::Instance()->Import(filename);
+    ProtoImporterMgr::Instance()->Import(filename);
     fprintf(stdout, "pb_import leave\n");
     return 0;
 }
 
 static int pb_new(lua_State* L) {
     const char* type_name = luaL_checkstring(L, 1);
-    google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(type_name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(type_name);
 
     if (!message) {
         fprintf(stderr, "pb_new error, result is typename(%s) not found!\n", type_name);
@@ -655,14 +655,14 @@ switch(field->cpp_type()) {\
 	}\
 	case FieldDescriptor::CPPTYPE_MESSAGE: {\
 		const std::string &name = field->message_type()->full_name();\
-		Message* submsg = ProtoImporter::Instance()->CreateMessage(name);\
+		Message* submsg = ProtoImporterMgr::Instance()->CreateMessage(name);\
 		ParseMessage(L, submsg);\
 		reflection->method_prefix##AllocatedMessage(msg, arg1, arg2);\
 		break;\
 	}\
 	default: {\
 			printf("Unknown cpptype!\n");\
-            ProtoImporter::Instance()->ReleaseMessage(msg);\
+            ProtoImporterMgr::Instance()->ReleaseMessage(msg);\
 			break;\
 	}\
 }
@@ -680,7 +680,7 @@ static void ParseMessage(lua_State* L, Message* msg) {
 
         if (lua_isnil(L, -1) && field->is_required()) {
             printf("Error: a required field in message is missing!\n");
-            ProtoImporter::Instance()->ReleaseMessage(msg);
+            ProtoImporterMgr::Instance()->ReleaseMessage(msg);
             return;
         }
 
@@ -786,7 +786,7 @@ static void WriteMessage(lua_State* L, const Message* pmsg) {
 /*****************************************************************************************/
 static int encode(lua_State *L) {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2),
@@ -801,7 +801,7 @@ static int encode(lua_State *L) {
     }
     lua_pushlstring(L, buffer.c_str(), buffer.length());
 
-    ProtoImporter::Instance()->ReleaseMessage(message);
+    ProtoImporterMgr::Instance()->ReleaseMessage(message);
     return 1;
 }
 
@@ -810,7 +810,7 @@ static int encode(lua_State *L) {
 /*****************************************************************************************/
 static int decode(lua_State *L) {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message* message = ProtoImporter::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         return 0;
@@ -823,7 +823,7 @@ static int decode(lua_State *L) {
     }
 
     WriteMessage(L, message);
-    ProtoImporter::Instance()->ReleaseMessage(message);
+    ProtoImporterMgr::Instance()->ReleaseMessage(message);
     return 1;
 }
 
