@@ -111,7 +111,7 @@ function pb_cpp_test_million()
         msg.desc:add("first")
         msg.desc:add("second")
         msg.desc:add("three")
-        
+
         local job = msg.jobs:add()
         job.jobtype = 8345
         job.jobdesc = "coder"
@@ -156,5 +156,5 @@ end
 pb_cpp_test()
 pb_table_test()
 
---pb_cpp_test_million()
---pb_table_test_million()
+pb_cpp_test_million()
+pb_table_test_million()
