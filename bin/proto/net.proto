@@ -24,6 +24,11 @@ WORK = 2;
 // [END enums]
 
 // [START messages]
+message tb_JobInfo {
+  optional uint32 jobtype = 1;
+  optional string jobdesc = 2;  
+}
+
 message tb_Person {
   optional MessageId __id = 1 [default = MSGID_tb_Person];
   optional string number = 2;
@@ -31,5 +36,6 @@ message tb_Person {
   optional uint32 age = 4;
   optional PhoneType ptype = 5;
   repeated string desc = 6;
+  repeated tb_JobInfo jobs = 7;
 }
 // [END messages]

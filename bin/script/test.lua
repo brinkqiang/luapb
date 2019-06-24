@@ -47,11 +47,19 @@ function pb_cpp_test()
         print("msg.desc[" .. i .. "] = " .. msg.desc:get(i))
     end
 
+    local job = msg.jobs:add()
+    job.jobtype = 8345
+    job.jobdesc = "coder"
+
+    local job2 = msg.jobs:add()
+    job2.jobtype = 9527
+    job2.jobdesc = "coder2"
+
     local buffer = pb.serializeToString(msg)
     local msg2 = pb.new("net.tb_Person")
     pb.parseFromString(msg2, buffer)
 
-    print("pb_cpp_test pass [" ..  buffer .. "]")
+    print("pb_cpp_test pass #\n" ..  pb.tostring(msg2))
 end
 
 function pb_table_test() 
@@ -60,7 +68,17 @@ function pb_table_test()
         email = "13615632545@163.com",
         age = 28,
         ptype = "WORK",
-        desc = {"first", "second", "three"}
+        desc = {"first", "second", "three"},
+        jobs = {
+            {
+                jobtype = 8345,
+                jobdesc = "coder"
+            },
+            {
+                jobtype = 9527,
+                jobdesc = "coder2"
+            }
+        }
     }
     for k, v in pairs(message) do
         print(type(v))
@@ -70,6 +88,9 @@ function pb_table_test()
     local buffer = pb.encode("net.tb_Person", message)
     local msg = pb.decode("net.tb_Person", buffer)
 
+    local msg2 = pb.new("net.tb_Person")
+    pb.parseFromString(msg2, buffer)
+
     assert(msg.number == "13615632545")
     assert(msg.email == "13615632545@163.com")
     assert(msg.age == 28)
@@ -77,7 +98,7 @@ function pb_table_test()
     assert(msg.desc[1] == "first")
     assert(msg.desc[2] == "second")
     assert(msg.desc[3] == "three")
-    print("pb_table_test pass [" ..  buffer .. "]")
+    print("pb_table_test pass #\n" ..  pb.tostring(msg2))
 end
 
 function pb_cpp_test_million()
@@ -90,6 +111,14 @@ function pb_cpp_test_million()
         msg.desc:add("first")
         msg.desc:add("second")
         msg.desc:add("three")
+        
+        local job = msg.jobs:add()
+        job.jobtype = 8345
+        job.jobdesc = "coder"
+    
+        local job2 = msg.jobs:add()
+        job2.jobtype = 9527
+        job2.jobdesc = "coder2"
 
         local buffer = pb.serializeToString(msg)
         local msg2 = pb.new("net.tb_Person")
@@ -105,7 +134,17 @@ function pb_table_test_million()
             email = "13615632545@163.com",
             age = 28,
             ptype = "WORK",
-            desc = {"first", "second", "three"}
+            desc = {"first", "second", "three"},
+            jobs = {
+                {
+                    jobtype = 8345,
+                    jobdesc = "coder"
+                },
+                {
+                    jobtype = 9527,
+                    jobdesc = "coder2"
+                }
+            }
         }
    
         local buffer = pb.encode("net.tb_Person", message)
@@ -117,5 +156,5 @@ end
 pb_cpp_test()
 pb_table_test()
 
-pb_cpp_test_million()
-pb_table_test_million()
+--pb_cpp_test_million()
+--pb_table_test_million()
