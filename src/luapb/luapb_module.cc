@@ -1050,14 +1050,14 @@ static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Messag
                 case google::protobuf::FieldDescriptor::TYPE_INT64:
                 {
                     pugi::xml_node xml_field = msg.append_child(field->name().c_str());
-                    xml_field.append_child(node_pcdata).set_value(reflection->GetRepeatedInt64(*message, field, j));
+                    xml_field.append_child(node_pcdata).set_value((long long)reflection->GetRepeatedInt64(*message, field, j));
                 }
                 break;
 
                 case google::protobuf::FieldDescriptor::TYPE_UINT64:
                 {
                     pugi::xml_node xml_field = msg.append_child(field->name().c_str());
-                    xml_field.append_child(node_pcdata).set_value(reflection->GetRepeatedUInt64(*message, field, j));
+                    xml_field.append_child(node_pcdata).set_value((unsigned long long)reflection->GetRepeatedUInt64(*message, field, j));
                 }
                 break;
 
@@ -1147,14 +1147,14 @@ static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Messag
             case google::protobuf::FieldDescriptor::TYPE_INT64:
             {
                 pugi::xml_node xml_field = msg.append_child(field->name().c_str());
-                xml_field.append_child(node_pcdata).set_value(reflection->GetInt64(*message, field));
+                xml_field.append_child(node_pcdata).set_value((long long)reflection->GetInt64(*message, field));
             }
             break;
 
             case google::protobuf::FieldDescriptor::TYPE_UINT64:
             {
                 pugi::xml_node xml_field = msg.append_child(field->name().c_str());
-                xml_field.append_child(node_pcdata).set_value(reflection->GetUInt64(*message, field));
+                xml_field.append_child(node_pcdata).set_value((unsigned long long)reflection->GetUInt64(*message, field));
             }
             break;
 
