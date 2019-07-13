@@ -3,6 +3,9 @@
 local pb = require("luapb")
 pb.import("net.proto")
 
+print("ID2Name: " .. pb.id2name(8345))
+print("Name2ID: " .. pb.name2id("net.tb_Person"))
+
 function pb_table_create()
     local msg = pb.new("net.tb_Person")
     msg.number = "13615632545"
@@ -80,6 +83,29 @@ function pb_table_test()
             }
         }
     }
+
+    local json = pb.table2json("net.tb_Person", message)
+    print("table2json = \n" .. json)
+
+    local json_table = pb.json2table("net.tb_Person", json)
+    local json2 = pb.table2json("net.tb_Person", json_table)
+    print("tjson2table = \n" .. json2)
+
+    local xml = pb.table2xml("net.tb_Person", message)
+    print("table2xml = \n" .. xml)
+
+    local xml_table = pb.xml2table("net.tb_Person", xml)
+    local xml2 = pb.table2xml("net.tb_Person", xml_table)
+    print("xml2table = \n" .. xml2)
+
+    local xml = pb.table2xml("net.tb_Person", message)
+    print("table2xml = \n" .. xml)
+
+    local json3 = pb.xml2json("net.tb_Person", xml)
+    print("xml2json = \n" .. json3)
+    local xml3 = pb.json2xml("net.tb_Person", json3)
+    print("json2xml = \n" .. xml3)
+
     for k, v in pairs(message) do
         print(type(v))
         print(k)
@@ -102,7 +128,7 @@ function pb_table_test()
 end
 
 function pb_cpp_test_million()
-    for i=1, 1000000 do
+    for i=1, 1 do
         local msg = pb.new("net.tb_Person")
         msg.number = "13615632545"
         msg.email = "13615632545@163.com"
@@ -156,5 +182,5 @@ end
 pb_cpp_test()
 pb_table_test()
 
-pb_cpp_test_million()
-pb_table_test_million()
+--pb_cpp_test_million()
+--pb_table_test_million()

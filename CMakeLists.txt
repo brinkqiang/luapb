@@ -112,8 +112,6 @@ ELSEIF (APPLE)
 
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
     TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
-
-
 ELSEIF (UNIX)
     ADD_DEFINITIONS(-DLUA_USE_LINUX)
 
@@ -131,7 +129,6 @@ ELSEIF (UNIX)
 
     ADD_EXECUTABLE(luapbtest ${LUAPBTEST_SOURCES})
     TARGET_LINK_LIBRARIES(luapbtest luapb lua53 libprotobuf libprotoc)
-
 ENDIF ()
 
 #ADD_CUSTOM_COMMAND(
