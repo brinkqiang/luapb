@@ -53,6 +53,8 @@ bool ProtoImporterImpl::Import(const std::string& strFileName) {
         return false;
     }
 
+    m_oProtoMsg.Import(m_oImporter);
+
     return true;
 }
 
@@ -81,6 +83,16 @@ void ProtoImporterImpl::ReleaseMessage(google::protobuf::Message* message) {
         delete message;
         message = NULL;
     }
+}
+
+std::string ProtoImporterImpl::ID2Name(int nMsgID)
+{
+    return m_oProtoMsg.ID2Name(nMsgID);
+}
+
+int ProtoImporterImpl::Name2ID(std::string strMsg)
+{
+    return m_oProtoMsg.Name2ID(strMsg);
 }
 
 ProtoImporterMgr::ProtoImporterMgr() {
@@ -130,4 +142,14 @@ google::protobuf::Message* ProtoImporterMgr::CreateMessage(
 void ProtoImporterMgr::ReleaseMessage(google::protobuf::Message* message)
 {
     m_poProtoImporter->ReleaseMessage(message);
+}
+
+std::string ProtoImporterMgr::ID2Name(int nMsgID)
+{
+    return m_poProtoImporter->ID2Name(nMsgID);
+}
+
+int ProtoImporterMgr::Name2ID(std::string strMsg)
+{
+    return m_poProtoImporter->Name2ID(strMsg);
 }

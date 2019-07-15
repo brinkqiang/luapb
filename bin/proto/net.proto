@@ -8,13 +8,11 @@
 
 // [START declaration]
 syntax = "proto2";
-package net;
 
+package net;
+import "msgheader.proto";
 
 // [START enums]
-enum MessageId {
-  MSGID_tb_Person = 0;
-}
 
 enum PhoneType {
 MOBILE = 0;
@@ -30,7 +28,7 @@ message tb_JobInfo {
 }
 
 message tb_Person {
-  optional MessageId __id = 1 [default = MSGID_tb_Person];
+  optional CMSG __id = 1 [default = MSGIDtb_Person];
   optional string number = 2;
   optional string email = 3;
   optional uint32 age = 4;

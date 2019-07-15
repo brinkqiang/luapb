@@ -8,6 +8,7 @@
 
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/compiler/importer.h>
+#include "protomsg.h"
 
 class ProtoImporterImpl {
   public:
@@ -18,9 +19,13 @@ class ProtoImporterImpl {
     google::protobuf::Message* CreateMessage(const std::string& strTypeName);
     void ReleaseMessage(google::protobuf::Message* message);
 
+    std::string ID2Name(int nMsgID);
+    int Name2ID(std::string strMsg);
   public:
     google::protobuf::compiler::Importer m_oImporter;
     google::protobuf::DynamicMessageFactory m_oFactory;
+
+    CProtoMsg m_oProtoMsg;
 };
 
 class ProtoImporterMgr : public TSingleton<ProtoImporterMgr> {
@@ -39,6 +44,9 @@ class ProtoImporterMgr : public TSingleton<ProtoImporterMgr> {
     void SetImporter(ProtoImporterImpl* poProtoImporter) {
         m_poProtoImporter = poProtoImporter;
     }
+
+    std::string ID2Name(int nMsgID);
+    int Name2ID(std::string strMsg);
 
   private:
     ProtoImporterImpl* m_poProtoImporter;

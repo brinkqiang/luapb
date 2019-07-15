@@ -47,6 +47,9 @@ pbtest 1361563254513615632545@163.com (2first2second2three
 local pb = require("luapb")
 pb.import("net.proto")
 
+print("ID2Name: " .. pb.id2name(8345))
+print("Name2ID: " .. pb.name2id("net.tb_Person"))
+
 function tbcreate()
     local msg = pb.new("net.tb_Person")
     msg.number = "13615632545"
