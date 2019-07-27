@@ -1,10 +1,22 @@
 -- lua script
 
 local pb = require("luapb")
+local luajson = require("luajson")
 pb.import("net.proto")
+
+function bin2hex(s)
+    s = string.gsub(s,"(.)",function (x) return string.format("%02X ",string.byte(x)) end)
+    return s
+end
 
 print("ID2Name: " .. pb.id2name(8345))
 print("Name2ID: " .. pb.name2id("net.tb_Person"))
+
+local xml = pb.loadxml("mmo.xml")
+local str = luajson.encode(xml)
+print(str)
+local xml2 = luajson.decode(str)
+print(xml2)
 
 function pb_table_create()
     local msg = pb.new("net.tb_Person")
