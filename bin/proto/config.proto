@@ -1,0 +1,32 @@
+// See README.txt for information and build instructions.
+//
+// Note: START and END tags are used in comments to define sections used in
+// tutorials.  They are not part of the syntax for Protocol Buffers.
+//
+// To get an in-depth walkthrough of this file and the related examples, see:
+// https://developers.google.com/protocol-buffers/docs/tutorials
+
+// [START declaration]
+syntax = "proto2";
+
+package config;
+
+// [START messages]
+message mmo {
+  optional uint32 id = 1;
+  optional string name = 2;
+}
+
+message config_mmo {
+  repeated mmo items = 1;
+}
+
+message arpg {
+  optional uint32 id = 1;
+  optional string name = 2;
+}
+
+message config_arpg {
+  repeated arpg items = 1;
+}
+// [END messages]
