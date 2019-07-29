@@ -21,6 +21,7 @@
 
 #include "luapb_module.h"
 #include "protoimporter.h"
+#include "sol.hpp"
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor_database.h>
@@ -33,7 +34,7 @@
 
 #include "pugixml.hpp"
 #include <fstream>
-#include "sol.hpp"
+
 //#include "dmutil.h"
 
 #include "yaml-cpp/yaml.h"
