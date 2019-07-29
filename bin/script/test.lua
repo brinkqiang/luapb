@@ -12,12 +12,6 @@ end
 print("ID2Name: " .. pb.id2name(8345))
 print("Name2ID: " .. pb.name2id("net.tb_Person"))
 
-local xml = pb.loadxml("config/mmo.xml")
-local str = luajson.encode(xml)
-print(str)
-local xml2 = luajson.decode(str)
-print(xml2)
-
 function pb_table_yaml()
     local message = {
         number = "13615632545",
