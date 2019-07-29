@@ -1995,53 +1995,53 @@ static int json2xml(lua_State *L)
     return 1;
 }
 
-static int loadxml(lua_State *L)
-{
-    //CDMWorkPathGuard oGuard;
-
-    const std::string filename(lua_tostring(L, -1));
-    const std::string rootname(lua_tostring(L, -2) ? lua_tostring(L, -2) : "config");
-    pugi::xml_document doc;
-    pugi::xml_parse_result ret = doc.load_file(filename.c_str());
-    if (ret.status != pugi::xml_parse_status::status_ok)
-    {
-        luaL_argerror(L, (2), "loadxml failed !!");
-        return 0;
-    }
-
-    sol::state_view lua(L);
-
-    sol::table sol_table = lua.create_table();
-
-    pugi::xml_node items = doc.child(rootname.c_str());
-
-    sol::table sol_root = sol_table.create_named(rootname);
-    sol::table sol_items = sol_root.create_named("item");
-
-    pugi::xml_object_range<pugi::xml_named_node_iterator> Record = items.children("item");
-
-    pugi::xml_named_node_iterator It = Record.begin();
-    for (int i=0; It != Record.end(); ++It, i++)
-    {
-        pugi::xml_node item = (*It);
-
-        sol::table sol_item = lua.create_table();
-
-        pugi::xml_node::attribute_iterator It2 = item.attributes_begin();
-
-        for (int j = 0; It2 != item.attributes_end(); It2++, j++)
-        {
-            std::string strName = (*It2).name();
-            std::string strData = (*It2).as_string();
-            sol_item[strName] = strData;
-        }
-        sol_items.add(sol_item);
-    }
-
-    sol_table.push();
-
-    return 1;
-}
+//static int loadxml(lua_State *L)
+//{
+//    //CDMWorkPathGuard oGuard;
+//
+//    const std::string filename(lua_tostring(L, -1));
+//    const std::string rootname(lua_tostring(L, -2) ? lua_tostring(L, -2) : "config");
+//    pugi::xml_document doc;
+//    pugi::xml_parse_result ret = doc.load_file(filename.c_str());
+//    if (ret.status != pugi::xml_parse_status::status_ok)
+//    {
+//        luaL_argerror(L, (2), "loadxml failed !!");
+//        return 0;
+//    }
+//
+//    sol::state_view lua(L);
+//
+//    sol::table sol_table = lua.create_table();
+//
+//    pugi::xml_node items = doc.child(rootname.c_str());
+//
+//    sol::table sol_root = sol_table.create_named(rootname);
+//    sol::table sol_items = sol_root.create_named("item");
+//
+//    pugi::xml_object_range<pugi::xml_named_node_iterator> Record = items.children("item");
+//
+//    pugi::xml_named_node_iterator It = Record.begin();
+//    for (int i=0; It != Record.end(); ++It, i++)
+//    {
+//        pugi::xml_node item = (*It);
+//
+//        sol::table sol_item = lua.create_table();
+//
+//        pugi::xml_node::attribute_iterator It2 = item.attributes_begin();
+//
+//        for (int j = 0; It2 != item.attributes_end(); It2++, j++)
+//        {
+//            std::string strName = (*It2).name();
+//            std::string strData = (*It2).as_string();
+//            sol_item[strName] = strData;
+//        }
+//        sol_items.add(sol_item);
+//    }
+//
+//    sol_table.push();
+//
+//    return 1;
+//}
 
 static int id2name(lua_State *L)
 {
@@ -2078,7 +2078,7 @@ static const struct luaL_Reg lib[] = {
     {"json2xml", json2xml},
     {"table2yaml", table2yaml},
     {"yaml2table", yaml2table},
-    {"loadxml", loadxml},
+    //{"loadxml", loadxml},
 
     {NULL, NULL}
 };
