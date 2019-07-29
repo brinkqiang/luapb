@@ -1,3 +1,0 @@
-EXPORTS 
-    luaopen_luajson
-    require_luajson

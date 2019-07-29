@@ -34,6 +34,11 @@
 #include "pugixml.hpp"
 #include <fstream>
 #include "sol.hpp"
+#include "dmutil.h"
+
+#include "yaml-cpp/yaml.h"
+#include "yaml-cpp/emittermanip.h"
+#include "yaml-cpp/emittermanip.h"
 
 using namespace google::protobuf;
 using namespace pugi;
@@ -822,7 +827,8 @@ static void ParseMessage(lua_State *L, Message *msg)
 
 #undef SWITCH_FIELD_TYPE
 #undef CASE_FIELD_TYPE
-
+#undef WriteMessage
+#undef GetMessage
 /*******************************************************/
 /*  write a protobuf class object into a lua table     */
 /*******************************************************/
@@ -1473,6 +1479,479 @@ static int xml2table(lua_State *L)
     return 1;
 }
 
+static void WriteYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *message, const char* name)
+{
+    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection *reflection = message->GetReflection();
+    YAML::Node msg;
+    if (name)
+    {
+        doc[name].push_back(msg);
+    }
+    else
+    {
+        //msg = doc.append_child(message->GetTypeName().c_str());
+        msg = doc;
+    }
+
+    for (int i = 0; i < descriptor->field_count(); i++)
+    {
+        const google::protobuf::FieldDescriptor *field = descriptor->field(i);
+        int index = i;
+
+        bool flag = true;
+        if (field->is_repeated())
+        {
+            if (field->has_default_value())
+            {
+                continue;
+            }
+
+            for (int j = 0; j < reflection->FieldSize((*message), field); j++)
+            {
+                switch (field->type())
+                {
+                case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
+                {
+                    google::protobuf::Message *_msg = reflection->MutableRepeatedMessage(message, field, j);
+                    WriteYaml(L, msg, _msg, field->name().c_str());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_INT32:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedUInt32(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_UINT32:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedUInt32(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_INT64:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedInt64(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_UINT64:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedUInt64(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_FLOAT:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedFloat(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_DOUBLE:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedDouble(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_STRING:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedString(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_BYTES:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedString(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_BOOL:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedBool(*message, field, j));
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_ENUM:
+                {
+                    YAML::Node xml_field = msg[field->name()];
+                    xml_field.push_back(reflection->GetRepeatedEnumValue(*message, field, j));
+                }
+                break;
+
+                default:
+                    luaL_argerror(L, 0, "writeyaml, field type for get not support!!!");
+                    return;
+                }
+            }
+
+            if (reflection->FieldSize((*message), field) == 0)
+            {
+                flag = false;
+            }
+        }
+        else
+        {
+            if (field->has_default_value())
+            {
+                continue;
+            }
+
+            switch (field->type())
+            {
+            case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
+            {
+                google::protobuf::Message *_msg = reflection->MutableMessage(message, field);
+                WriteYaml(L, msg, _msg, field->name().c_str());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_INT32:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetInt32(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_UINT32:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetUInt32(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_INT64:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetInt64(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_UINT64:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetUInt64(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_FLOAT:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetFloat(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_DOUBLE:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetDouble(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_STRING:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetString(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_BYTES:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetString(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_BOOL:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetBool(*message, field);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_ENUM:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                xml_field = reflection->GetEnumValue(*message, field);
+            }
+            break;
+
+            default:
+                luaL_argerror(L, 0, "writeyaml, field type for get not support!!!");
+                return;
+            }
+        }
+    }
+}
+
+static void ReadYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *message, const char* name = NULL)
+{
+    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection *reflection = message->GetReflection();
+    YAML::Node msg;
+    if (name)
+    {
+        msg = doc;
+    }
+    else
+    {
+        //msg = doc.child(message->GetTypeName().c_str());
+        msg = doc;
+    }
+
+    for (int i = 0; i < descriptor->field_count(); i++)
+    {
+        const google::protobuf::FieldDescriptor *field = descriptor->field(i);
+
+        int index = i;
+
+        bool flag = true;
+        if (field->is_repeated())
+        {
+            if (field->has_default_value())
+            {
+                continue;
+            }
+
+            YAML::Node range = msg[field->name()];
+            YAML::iterator It = range.begin();
+            int i = 0;
+            for (i = 0; It != range.end(); ++i, ++It)
+            {
+                switch (field->type())
+                {
+                case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
+                {
+                    YAML::Node xml_field = *It;
+                    google::protobuf::Message *_msg = reflection->AddMessage(message, field);
+                    ReadYaml(L, xml_field, _msg, field->name().c_str());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_INT32:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddInt32(message, field, xml_field.as<int>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_UINT32:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddUInt32(message, field, xml_field.as<unsigned int>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_INT64:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddInt64(message, field, xml_field.as<long long>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_UINT64:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddUInt64(message, field, xml_field.as<unsigned long long>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_FLOAT:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddFloat(message, field, xml_field.as<float>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_DOUBLE:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddDouble(message, field, xml_field.as<double>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_STRING:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddString(message, field, xml_field.as<std::string>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_BYTES:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddString(message, field, xml_field.as<std::string>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_BOOL:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddBool(message, field, xml_field.as<bool>());
+                }
+                break;
+
+                case google::protobuf::FieldDescriptor::TYPE_ENUM:
+                {
+                    YAML::Node xml_field = *It;
+                    reflection->AddEnumValue(message, field, xml_field.as<int>());
+                }
+                break;
+
+                default:
+                    luaL_argerror(L, 0, "readyaml, field type for get not support!!!");
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (field->has_default_value())
+            {
+                continue;
+            }
+
+            switch (field->type())
+            {
+            case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
+            {
+                google::protobuf::Message *_msg = reflection->AddMessage(message, field);
+                ReadYaml(L, msg, _msg);
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_INT32:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetInt32(message, field, xml_field.as<int>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_UINT32:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetUInt32(message, field, xml_field.as<unsigned int>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_INT64:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetInt64(message, field, xml_field.as<long long>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_UINT64:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetUInt64(message, field, xml_field.as<unsigned long long>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_FLOAT:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetFloat(message, field, xml_field.as<float>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_DOUBLE:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetDouble(message, field, xml_field.as<double>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_STRING:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetString(message, field, xml_field.as<std::string>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_BYTES:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetString(message, field, xml_field.as<std::string>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_BOOL:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetBool(message, field, xml_field.as<bool>());
+            }
+            break;
+
+            case google::protobuf::FieldDescriptor::TYPE_ENUM:
+            {
+                YAML::Node xml_field = msg[field->name()];
+                reflection->SetEnumValue(message, field, xml_field.as<int>());
+            }
+            break;
+            default:
+                luaL_argerror(L, 0, "readxml, field type for get not support!!!");
+                return;
+            }
+        }
+    }
+}
+
+static int table2yaml(lua_State *L)
+{
+    const std::string name(lua_tostring(L, -2));
+    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    if (NULL == message)
+    {
+        luaL_argerror(L, (2), "table2xml !!");
+        return 0;
+    }
+
+    ParseMessage(L, message);
+
+    YAML::Node doc;
+    WriteYaml(L, doc, message, NULL);
+
+    std::stringstream ss;
+    ss << doc;
+    std::string strDoc = ss.str();
+
+    lua_pushlstring(L, strDoc.c_str(), strDoc.length());
+
+    ProtoImporterMgr::Instance()->ReleaseMessage(message);
+
+    return 1;
+}
+
+static int yaml2table(lua_State *L)
+{
+    const std::string name(lua_tostring(L, -2));
+    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    if (NULL == message)
+    {
+        return 0;
+    }
+    size_t len;
+    const char *s = lua_tolstring(L, -1, &len);
+    std::string buffer(s, len);
+
+    YAML::Node doc = YAML::Load(buffer.c_str());
+    ReadYaml(L, doc, message);
+    WriteMessage(L, message);
+
+    ProtoImporterMgr::Instance()->ReleaseMessage(message);
+    return 1;
+}
+
 static int xml2json(lua_State *L)
 {
     const std::string name(lua_tostring(L, -2));
@@ -1517,6 +1996,8 @@ static int json2xml(lua_State *L)
 
 static int loadxml(lua_State *L)
 {
+    CDMWorkPathGuard oGuard;
+
     const std::string filename(lua_tostring(L, -1));
     const std::string rootname(lua_tostring(L, -2) ? lua_tostring(L, -2) : "config");
     pugi::xml_document doc;
@@ -1594,7 +2075,10 @@ static const struct luaL_Reg lib[] = {
     {"xml2table", xml2table},
     {"xml2json", xml2json},
     {"json2xml", json2xml},
+    {"table2yaml", table2yaml},
+    {"yaml2table", yaml2table},
     {"loadxml", loadxml},
+
     {NULL, NULL}
 };
 

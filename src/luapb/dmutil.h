@@ -237,7 +237,7 @@ static std::string DMGetExePath() {
 
 static std::string DMGetWorkPath() {
     char szPath[MAX_PATH];
-    getcwd( szPath, sizeof( szPath ) );
+    getcwd(szPath, sizeof(szPath));
     return szPath;
 }
 
@@ -250,6 +250,26 @@ static void DMSetWorkPath() {
     chdir(strPath.c_str());
 #endif
 }
+
+static void DMSetWorkPath(std::string& strPath) {
+    chdir(strPath.c_str());
+}
+
+class CDMWorkPathGuard
+{
+public:
+    CDMWorkPathGuard()
+    {
+        m_strPath = DMGetWorkPath();
+        DMSetWorkPath();
+    }
+    ~CDMWorkPathGuard()
+    {
+        DMSetWorkPath(m_strPath);
+    }
+private:
+    std::string m_strPath;
+};
 
 // tolua_end
 
