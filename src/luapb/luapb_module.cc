@@ -34,7 +34,7 @@
 #include "pugixml.hpp"
 #include <fstream>
 #include "sol.hpp"
-#include "dmutil.h"
+//#include "dmutil.h"
 
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/emittermanip.h"
@@ -1996,7 +1996,7 @@ static int json2xml(lua_State *L)
 
 static int loadxml(lua_State *L)
 {
-    CDMWorkPathGuard oGuard;
+    //CDMWorkPathGuard oGuard;
 
     const std::string filename(lua_tostring(L, -1));
     const std::string rootname(lua_tostring(L, -2) ? lua_tostring(L, -2) : "config");
