@@ -26,8 +26,8 @@ IF(MSVC)
     ADD_DEFINITIONS(-Dstrncasecmp=_strnicmp)
 ENDIF()
 
-OPTION(USE_LUA_INNER "use lua inner" ON)
-OPTION(USE_LUAJSON_TEST "use luajson test" ON)
+OPTION(USE_LUA_INNER "use lua inner" OFF)
+OPTION(USE_LUAJSON_TEST "use luajson test" OFF)
 
 #ModuleImport("dmlog" "thirdparty/dmlog")
 

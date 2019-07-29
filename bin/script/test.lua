@@ -12,11 +12,38 @@ end
 print("ID2Name: " .. pb.id2name(8345))
 print("Name2ID: " .. pb.name2id("net.tb_Person"))
 
-local xml = pb.loadxml("mmo.xml")
+local xml = pb.loadxml("config/mmo.xml")
 local str = luajson.encode(xml)
 print(str)
 local xml2 = luajson.decode(str)
 print(xml2)
+
+function pb_table_yaml()
+    local message = {
+        number = "13615632545",
+        email = "13615632545@163.com",
+        age = 28,
+        ptype = "WORK",
+        desc = {"first", "second", "three"},
+        jobs = {
+            {
+                jobtype = 8345,
+                jobdesc = "coder"
+            },
+            {
+                jobtype = 9527,
+                jobdesc = "coder2"
+            }
+        }
+    }
+
+    local yaml = pb.table2yaml("net.tb_Person", message)
+    local table = pb.yaml2table("net.tb_Person", yaml)
+    print("yaml \n" .. yaml)
+
+    local str = luajson.encode(table)
+    print("yaml-json \n" .. str)
+end
 
 function pb_table_create()
     local msg = pb.new("net.tb_Person")
@@ -191,8 +218,9 @@ function pb_table_test_million()
     print("pb_table_test_million pass")
 end
 
-pb_cpp_test()
-pb_table_test()
+pb_table_yaml()
+--pb_cpp_test()
+--pb_table_test()
 
 --pb_cpp_test_million()
 --pb_table_test_million()
