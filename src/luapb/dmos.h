@@ -55,6 +55,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include <winsock2.h>
 
@@ -103,6 +104,7 @@ using namespace stdext;
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 #include <sys/types.h>
 #include <sys/stat.h>

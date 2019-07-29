@@ -241,6 +241,16 @@ static std::string DMGetWorkPath() {
     return szPath;
 }
 
+static void DMSetWorkPath() {
+#ifdef WIN32
+    std::string strPath = DMGetRootPath() + "\\..\\";
+    chdir(strPath.c_str());
+#else
+    std::string strPath = DMGetRootPath();
+    chdir(strPath.c_str());
+#endif
+}
+
 // tolua_end
 
 #endif // __DMUTIL_H_INCLUDE__
