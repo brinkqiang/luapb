@@ -138,7 +138,7 @@ function pb_table_test()
 
     local json_table = pb.json2table("net.tb_Person", json)
     local json2 = pb.table2json("net.tb_Person", json_table)
-    print("tjson2table # \n" .. json2)
+    print("json2table # \n" .. json2)
 
     local xml = pb.table2xml("net.tb_Person", message)
     print("table2xml # \n" .. xml)
