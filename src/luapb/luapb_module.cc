@@ -21,7 +21,6 @@
 
 #include "luapb_module.h"
 #include "protoimporter.h"
-#include "sol.hpp"
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor_database.h>
@@ -40,6 +39,7 @@
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/emittermanip.h"
 #include "yaml-cpp/emittermanip.h"
+//#include "sol.hpp"
 
 using namespace google::protobuf;
 using namespace pugi;
