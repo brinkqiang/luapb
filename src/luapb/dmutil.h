@@ -24,6 +24,8 @@
 
 #include "dmos.h"
 
+#include <mutex>
+
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
@@ -123,11 +125,12 @@ static inline bool DMCreateDirectory(const char* dir_name) {
     return true;
 }
 
-static inline bool DMCreateDirectories(const char* dir_name){
-    if (access(dir_name, 0) == 0){
-        if (DMIsDirectory(dir_name)){
+static inline bool DMCreateDirectories(const char* dir_name) {
+    if (access(dir_name, 0) == 0) {
+        if (DMIsDirectory(dir_name)) {
             return true;
         }
+
         return false;
     }
 
@@ -135,9 +138,11 @@ static inline bool DMCreateDirectories(const char* dir_name){
     strncpy(path, dir_name, sizeof(path));
 
     char* p = strrchr(path, PATH_DELIMITER);
-    if (NULL == p){
+
+    if (NULL == p) {
         return DMCreateDirectory(path);
     }
+
     *(p) = '\0';
     DMCreateDirectories(path);
     return DMCreateDirectory(dir_name);
@@ -146,21 +151,19 @@ static inline bool DMCreateDirectories(const char* dir_name){
 static std::string DMGetRootPath() {
 #ifdef WIN32
     static char path[MAX_PATH];
-    static bool first_time = true;
-
-    if ( first_time ) {
-        first_time = false;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        char temp[MAX_PATH];
         GetModuleFileNameA( 0, path, sizeof( path ) );
         char* p = strrchr( path, '\\' );
         *( p ) = '\0';
-    }
+    });
 
     return path;
 #elif __APPLE__
     static char path[MAX_PATH];
-    static bool first_time = true;
-
-    if ( first_time ) {
+    static std::once_flag flag;
+    std::call_once(flag, []() {
         uint32_t size = sizeof( path );
         int nRet = _NSGetExecutablePath( path, &size );
 
@@ -170,15 +173,12 @@ static std::string DMGetRootPath() {
 
         char* p = strrchr( path, '/' );
         *( p ) = '\0';
-    }
-
+    });
     return path;
 #else
     static char path[MAX_PATH];
-    static bool first_time = true;
-
-    if ( first_time ) {
-        first_time = false;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
         int nRet = readlink( "/proc/self/exe", path, MAX_PATH );
 
         if ( nRet < 0 || nRet >= MAX_PATH ) {
@@ -187,7 +187,7 @@ static std::string DMGetRootPath() {
 
         char* p = strrchr( path, '/' );
         *( p ) = '\0';
-    }
+    });
 
     return path;
 #endif
@@ -196,40 +196,121 @@ static std::string DMGetRootPath() {
 static std::string DMGetExePath() {
 #ifdef WIN32
     static char path[MAX_PATH];
-    static bool first_time = true;
-
-    if ( first_time ) {
-        first_time = false;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        char temp[MAX_PATH];
         GetModuleFileNameA( 0, path, sizeof( path ) );
-    }
+    });
 
     return path;
 #elif __APPLE__
     static char path[MAX_PATH];
-    static bool first_time = true;
-
-    if ( first_time ) {
+    static std::once_flag flag;
+    std::call_once(flag, []() {
         uint32_t size = sizeof( path );
         int nRet = _NSGetExecutablePath( path, &size );
 
         if ( nRet != 0 ) {
             return "./";
         }
-    }
-
+    });
     return path;
 #else
     static char path[MAX_PATH];
-    static bool first_time = true;
-
-    if ( first_time ) {
-        first_time = false;
+    static std::once_flag flag;
+    std::call_once(flag, []() {
         int nRet = readlink( "/proc/self/exe", path, MAX_PATH );
 
         if ( nRet < 0 || nRet >= MAX_PATH ) {
             return "./";
         }
-    }
+    });
+
+    return path;
+#endif
+}
+
+static const char* DMGetExeName() {
+#ifdef WIN32
+    static char path[MAX_PATH];
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        char temp[MAX_PATH];
+        GetModuleFileNameA(0, temp, sizeof(path));
+
+        char* point = strrchr(temp, '.');
+
+        if (NULL == point) {
+            strcpy(path, temp);
+            return;
+        }
+
+        *point = '\0';
+
+        char* del = strrchr(temp, PATH_DELIMITER);
+
+        if (NULL == del) {
+            strcpy(path, temp);
+            return;
+        }
+
+        strcpy(path, del + 1);
+    });
+
+    return path;
+#elif __APPLE__
+    static char path[MAX_PATH];
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        char temp[MAX_PATH];
+        uint32_t size = sizeof(temp);
+        int ret = _NSGetExecutablePath(temp, &size);
+
+        if (ret != 0) {
+            strcpy(path, temp);
+            return;
+        }
+
+        char* point = strrchr(temp, '.');
+
+        if (NULL == p) {
+            strcpy(path, temp);
+            return;
+        }
+
+        *point = '\0';
+
+        char* del = strrchr(temp, PATH_DELIMITER)
+
+        if (NULL == del) {
+            strcpy(path, temp);
+            return;
+        }
+
+        strcpy(path, del + 1);
+    });
+    return path;
+#else
+    static char path[MAX_PATH];
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        char temp[MAX_PATH];
+        int ret = readlink("/proc/self/exe", temp, MAX_PATH);
+
+        if (ret < 0 || ret >= MAX_PATH) {
+            strcpy(path, temp);
+            return;
+        }
+        temp[ret] = '\0';
+        char* del = strrchr(temp, PATH_DELIMITER);
+
+        if (NULL == del) {
+            strcpy(path, temp);
+            return;
+        }
+
+        strcpy(path, del + 1);
+    });
 
     return path;
 #endif
