@@ -15,9 +15,6 @@ endif()
 # Project
 project(protobuf C CXX)
 
-LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/bin)
-SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 
 # Add c++11 flags
 if (CYGWIN)
