@@ -280,7 +280,7 @@ static const char* DMGetExeName() {
 
         *point = '\0';
 
-        char* del = strrchr(temp, PATH_DELIMITER)
+        char* del = strrchr(temp, PATH_DELIMITER);
 
         if (NULL == del) {
             strcpy(path, temp);
