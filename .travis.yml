@@ -23,8 +23,7 @@ addons:
     #   https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-trusty
     # List of whitelisted in travis apt-sources:
     #   https://github.com/travis-ci/apt-source-whitelist/blob/master/ubuntu.json
-    sources:
-
+    sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-5.0']
     packages:
       - cmake
 #     - libtool
