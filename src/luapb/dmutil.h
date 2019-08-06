@@ -273,7 +273,7 @@ static const char* DMGetExeName() {
 
         char* point = strrchr(temp, '.');
 
-        if (NULL == p) {
+        if (NULL == point) {
             strcpy(path, temp);
             return;
         }
