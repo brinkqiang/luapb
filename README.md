@@ -24,18 +24,11 @@ Copyright (c) 2013-2018 brinkqiang (brink.qiang@gmail.com)
 ## Intro
 luapb  
 
-win
 ```
-cd bin\debug
+cd bin\relwithdebinfo
 lua ..\script\msg.lua  
 ```
 
-linux
-```
-cd bin
-lua script/msg.lua
-```
-```
 pb_import enter
 pb_import leave
 pbtest 1361563254513615632545@163.com (2first2second2three
