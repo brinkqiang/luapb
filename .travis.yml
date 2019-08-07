@@ -14,7 +14,7 @@ matrix:
             - GCC_VERSION=7
             - CC=gcc-7
             - CXX=g++-7
-            - BUILD_TYPE=RelWithDebInfo
+            - BUILD_TYPE=relwithdebinfo
           addons:
             apt:
               # List of whitelisted in travis packages for ubuntu-trusty can be found here:
@@ -27,7 +27,7 @@ matrix:
       -   os: osx
           compiler: gcc
           env: 
-            - BUILD_TYPE=RelWithDebInfo
+            - BUILD_TYPE=relwithdebinfo
           addons:
             apt:
               sources: 
@@ -76,7 +76,7 @@ script:
   - popd
 
 after_success:
-  - cd bin
+  - cd bin/$BUILD_TYPE
   - "if [ -f lua ] ; then ./lua script/msg.lua ; fi"
 
 after_failure:
