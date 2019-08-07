@@ -72,12 +72,12 @@ before_script:
 script:
   - mkdir -p build && pushd build
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-  - cmake --build .
+  - cmake --build . --config $BUILD_TYPE
   - popd
 
 after_success:
   - cd bin/$BUILD_TYPE
-  - "if [ -f lua ] ; then ./lua script/msg.lua ; fi"
+  - "if [ -f lua ] ; then ./lua ../script/msg.lua ; fi"
 
 after_failure:
   - echo failure
