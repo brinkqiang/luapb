@@ -35,7 +35,6 @@
 #include <fstream>
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/emittermanip.h"
-#include "yaml-cpp/emittermanip.h"
 
 using namespace google::protobuf;
 using namespace pugi;
