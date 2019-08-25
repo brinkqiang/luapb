@@ -12,12 +12,6 @@ end
 print("ID2Name: " .. pb.id2name(8345))
 print("Name2ID: " .. pb.name2id("net.tb_Person"))
 
-local xml = pb.loadxml("config/mmo.xml")
-local str = luajson.encode(xml)
-print(str)
-local xml2 = luajson.decode(str)
-print(xml2)
-
 function pb_table_yaml()
     local message = {
         number = "13615632545",
@@ -39,10 +33,10 @@ function pb_table_yaml()
 
     local yaml = pb.table2yaml("net.tb_Person", message)
     local table = pb.yaml2table("net.tb_Person", yaml)
-    print("yaml \n" .. yaml)
+    print("table2yaml # \n" .. yaml)
 
     local str = luajson.encode(table)
-    print("yaml-json \n" .. str)
+    print("yaml2table # \n" .. str)
 end
 
 function pb_table_create()
@@ -54,6 +48,14 @@ function pb_table_create()
     msg.desc:add("first")
     msg.desc:add("second")
     msg.desc:add("three")
+
+    local job = msg.jobs:add()
+    job.jobtype = 8345
+    job.jobdesc = "coder"
+
+    local job2 = msg.jobs:add()
+    job2.jobtype = 9527
+    job2.jobdesc = "coder2"
 end
 
 function pbtest()
@@ -65,6 +67,14 @@ function pbtest()
     msg.desc:add("first")
     msg.desc:add("second")
     msg.desc:add("three")
+
+    local job = msg.jobs:add()
+    job.jobtype = 8345
+    job.jobdesc = "coder"
+
+    local job2 = msg.jobs:add()
+    job2.jobtype = 9527
+    job2.jobdesc = "coder2"
 
     local binstr = pb.serializeToString(msg)
     local msg2 = pb.new("net.tb_Person")
@@ -124,26 +134,26 @@ function pb_table_test()
     }
 
     local json = pb.table2json("net.tb_Person", message)
-    print("table2json = \n" .. json)
+    print("table2json # \n" .. json)
 
     local json_table = pb.json2table("net.tb_Person", json)
     local json2 = pb.table2json("net.tb_Person", json_table)
-    print("tjson2table = \n" .. json2)
+    print("json2table # \n" .. json2)
 
     local xml = pb.table2xml("net.tb_Person", message)
-    print("table2xml = \n" .. xml)
+    print("table2xml # \n" .. xml)
 
     local xml_table = pb.xml2table("net.tb_Person", xml)
     local xml2 = pb.table2xml("net.tb_Person", xml_table)
-    print("xml2table = \n" .. xml2)
+    print("xml2table # \n" .. xml2)
 
     local xml = pb.table2xml("net.tb_Person", message)
-    print("table2xml = \n" .. xml)
+    print("table2xml # \n" .. xml)
 
     local json3 = pb.xml2json("net.tb_Person", xml)
-    print("xml2json = \n" .. json3)
+    print("xml2json # \n" .. json3)
     local xml3 = pb.json2xml("net.tb_Person", json3)
-    print("json2xml = \n" .. xml3)
+    print("json2xml # \n" .. xml3)
 
     for k, v in pairs(message) do
         print(type(v))
@@ -219,8 +229,8 @@ function pb_table_test_million()
 end
 
 pb_table_yaml()
---pb_cpp_test()
---pb_table_test()
+pb_cpp_test()
+pb_table_test()
 
 --pb_cpp_test_million()
 --pb_table_test_million()

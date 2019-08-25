@@ -6,37 +6,36 @@ sudo: false
 dist: trusty
 language: cpp
 
-compiler:
-  - gcc
-# - clang
-os:
-  - linux
-# - osx
+matrix:
+    include:
+      -   os: linux
+          compiler: gcc
+          env: 
+            - GCC_VERSION=7
+            - CC=gcc-7
+            - CXX=g++-7
+            - BUILD_TYPE=relwithdebinfo
+          addons:
+            apt:
+              # List of whitelisted in travis packages for ubuntu-trusty can be found here:
+              #   https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-trusty
+              # List of whitelisted in travis apt-sources:
+              #   https://github.com/travis-ci/apt-source-whitelist/blob/master/ubuntu.json
+              sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-5.0']
+              packages: ['cmake', 'autoconf', 'automake', 'gcc-7', 'g++-7', 'clang-5.0']
 
-env:
-# - BUILD_TYPE=Debug
-  - BUILD_TYPE=RelWithDebInfo
-
-addons:
-  apt:
-    # List of whitelisted in travis packages for ubuntu-trusty can be found here:
-    #   https://github.com/travis-ci/apt-package-whitelist/blob/master/ubuntu-trusty
-    # List of whitelisted in travis apt-sources:
-    #   https://github.com/travis-ci/apt-source-whitelist/blob/master/ubuntu.json
-    sources:
-
-    packages:
-      - cmake
-#     - libtool
-      - autoconf
-      - automake 
-      - gcc-7
-      - g++-7
-#     - clang-5.0
-
+      -   os: osx
+          compiler: gcc
+          env: 
+            - BUILD_TYPE=relwithdebinfo
+          addons:
+            apt:
+              sources: 
+              packages: ['cmake', 'autoconf', 'automake', 'gcc-7', 'g++-7', 'clang-5.0']
 
 install:
   - cmake --version
+  - gcc -v
 
 before_install:
   - |
@@ -73,12 +72,12 @@ before_script:
 script:
   - mkdir -p build && pushd build
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-  - cmake --build .
+  - cmake --build . --config $BUILD_TYPE
   - popd
 
 after_success:
-  - cd bin
-  - "if [ -f lua ] ; then ./lua script/msg.lua ; fi"
+  - cd bin/$BUILD_TYPE
+  - "if [ -f lua ] ; then ./lua ../script/msg.lua ; fi"
 
 after_failure:
   - echo failure

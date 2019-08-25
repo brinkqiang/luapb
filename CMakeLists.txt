@@ -4,12 +4,11 @@ PROJECT(luapb)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 INCLUDE(cmake/ModuleImport.cmake)
 INCLUDE(cmake/ModuleCompileOptions.cmake)
+ModuleSetCompileOptions()
 
 ModuleImport("dmprotobuf" "thirdparty/dmprotobuf")
 ModuleImport("dmyaml" "thirdparty/dmyaml")
 ModuleImport("luajson" "thirdparty/luajson")
-
-ModuleSetCompileOptions()
 
 OPTION(USE_LUAPB_INNER "use lua inner" ON)
 OPTION(USE_LUAPB_TEST "use luapb test" ON)
@@ -50,11 +49,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/luapb)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/luajson)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/test)
-
-LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/bin)
-
-SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 
 FILE(GLOB DMLUA_SOURCES
 ${CMAKE_CURRENT_SOURCE_DIR}/src/lua/*.cpp

@@ -33,10 +33,6 @@ endmacro(ModuleInclude)
 macro(ModuleImport ModuleName ModulePath)
     MESSAGE(STATUS "ModuleImport ${ModuleName} ${ModulePath}")
 
-    LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/bin)
-    SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-    SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-
     IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/CMakeLists.txt)
         ADD_SUBDIRECTORY(${ModulePath})
     ELSEIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/cmake/CMakeLists.txt)
@@ -56,17 +52,24 @@ macro(ModuleImport ModuleName ModulePath)
 endmacro(ModuleImport)
 
 macro(ExeImport ModulePath DependsLib)
-    MESSAGE(STATUS "BinImport ${ModulePath} ${DependsLib}")
+    MESSAGE(STATUS "ExeImport ${ModulePath} ${DependsLib}")
 
     IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath})
         SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath})
         FOREACH(subdir ${SUBDIRS})
+            MESSAGE(STATUS "INCLUDE -> ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}")
+            INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir})
             FILE(GLOB_RECURSE BIN_SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}/*.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}/*.cc
             ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}/*.c
             ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}/*.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}/*.h)
+
+            LIST(FILTER BIN_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/${subdir}/tpl/*")
+
+            MESSAGE(STATUS "BIN_SOURCES ${LIB_SOURCES}")
+
             ADD_EXECUTABLE(${subdir} ${BIN_SOURCES})
             TARGET_LINK_LIBRARIES(${subdir} ${DependsLib})
         ENDFOREACH()
@@ -78,17 +81,19 @@ macro(LibImport ModuleName ModulePath)
     MESSAGE(STATUS "LibImport ${ModuleName} ${ModulePath}")
 
     IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath})
+        ModuleInclude(${ModuleName} ${ModulePath})
         FILE(GLOB_RECURSE LIB_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/${ModuleName}/*.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/${ModuleName}/*.h
+
         ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/*.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/*.c
         ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/*.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/*.h
         )
+
+        LIST(FILTER LIB_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/tpl/*")
 
         IF (WIN32)
             LIST(APPEND LIB_SOURCES)
@@ -119,10 +124,6 @@ endmacro(ModuleInclude2)
 
 macro(ModuleImport2 ModuleName ModulePath)
     MESSAGE(STATUS "ModuleImport2 ${ModuleName} ${ModulePath}")
-
-    LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/bin)
-    SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
-    SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 
     IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/thirdparty)
         SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/thirdparty)

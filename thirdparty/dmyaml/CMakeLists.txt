@@ -18,7 +18,6 @@ OPTION(USE_DMYAML "use dmyaml" OFF)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/dmyaml_config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/dmyaml_config.h)
 
 ModuleInclude("yaml-cpp" "")
-ModuleImport("dmlog" "thirdparty/dmlog")
 LibImport("dmyaml" "src")
 #ADD_CUSTOM_COMMAND(
 #TARGET dmyamltest
