@@ -41,11 +41,11 @@ function test_luapb_decode()
     local chunk = pb.encode("Person", data)
     local msg = pb.new("Person")
     pb.parseFromString(msg, chunk)
-    local buffer = pb.serializeToString("Person", msg)
+    local buffer = pb.serializeToString(msg)
 
     local t1 = os.clock();
     for i=1,1000000 do
-        local buf = pb.parseFromString("Person", msg)
+        local buf = pb.parseFromString(msg)
     end 
     print("num="..num.."\ttime="..os.clock()-t1)
 end 
