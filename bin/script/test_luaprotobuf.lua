@@ -1,7 +1,7 @@
 local protoc = require "protoc"
 local pb = require "pb"
 local buffer = require "pb.buffer"
-protoc:new():loadfile("test_luaprotobuf.proto")
+protoc:new():loadfile("../proto/test_luaprotobuf.proto")
 
 function test_encode(num)
     local de = pb.decode("Person", chunk)
