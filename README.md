@@ -24,7 +24,15 @@ Copyright (c) 2013-2018 brinkqiang (brink.qiang@gmail.com)
 ## Intro
 luapb  
 
+win
 ```
+build.bat
+cd bin\relwithdebinfo
+lua ..\script\msg.lua  
+```
+linux
+```
+bash build.sh
 cd bin\relwithdebinfo
 lua ..\script\msg.lua  
 ```
