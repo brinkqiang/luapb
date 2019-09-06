@@ -45,7 +45,7 @@ function test_luapb_decode(num)
 
     local t1 = os.clock();
     for i=1,num do
-        local buf = pb.parseFromString(msg)
+        pb.parseFromString(msg, chunk)
     end 
     print("num=".. num .."\ttime="..os.clock()-t1)
 end 
