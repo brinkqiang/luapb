@@ -1,6 +1,6 @@
 
 local pb = require "luapb"
-pb.import("test_luaprotobuf.proto")
+pb.import("test_luapb.proto")
 
 function test_luapb_encode(num)
     local data = {
