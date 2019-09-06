@@ -28,8 +28,8 @@ environment:
   #   VS_PLATFORM: win32
   # - VS_VERSION: 14 2015
   #   VS_PLATFORM: x64
-  # - VS_VERSION: 15 2017
-  #   VS_PLATFORM: win32
+    - VS_VERSION: 15 2017
+      VS_PLATFORM: win32
     - VS_VERSION: 15 2017
       VS_PLATFORM: x64
 before_build:
@@ -43,9 +43,8 @@ build:
 
 test_script:
 # Environment variables https://www.appveyor.com/docs/environment-variables/
-- echo %APPVEYOR_REPO_NAME%
-- echo %APPVEYOR_PROJECT_NAME%
-- echo %APPVEYOR_ACCOUNT_NAME%
+- cd bin/relwithdebinfo
+- lua ../script/test_luaprotobuf.lua
 
 #deploy:
 #  release: "%APPVEYOR_PROJECT_NAME%-v%APPVEYOR_BUILD_VERSION%"
