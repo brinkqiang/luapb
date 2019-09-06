@@ -14,6 +14,11 @@ for i=1,loop do
 end 
 
 local chunk = pb.encode("Person",data)
+local msg = pb.new("net.tb_Person")
+pb.parseFromString(msg, chunk)
+local buffer = pb.serializeToString(msg)
+
+local chunk = pb.encode("Person",data)
 --print(string.len(chunk))
 local de = pb.decode("Person",chunk)
 for k,v in pairs(de) do 
@@ -28,6 +33,9 @@ function testn(num,f,...)
     print("num="..num.."\ttime="..os.clock()-t1)
 end 
 
-testn(1000000,pb.encode,"Person",data)
-testn(1000000,pb.decode,"Person",chunk)
+testn(1000000,pb.serializeToString,"Person",msg)
+testn(1000000,pb.parseFromString,"Person",buffer)
+
+--testn(1000000,pb.encode,"Person",data)
+--testn(1000000,pb.decode,"Person",chunk)
 
