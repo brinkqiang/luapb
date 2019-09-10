@@ -9,6 +9,7 @@ ModuleSetCompileOptions()
 ModuleImport("dmprotobuf" "thirdparty/dmprotobuf")
 ModuleImport("dmyaml" "thirdparty/dmyaml")
 ModuleImport("luajson" "thirdparty/luajson")
+ModuleImport("pb" "thirdparty/pb")
 
 OPTION(USE_LUAPB_INNER "use lua inner" ON)
 OPTION(USE_LUAPB_TEST "use luapb test" ON)
