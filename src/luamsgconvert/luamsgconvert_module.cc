@@ -35,9 +35,8 @@ namespace lua_module_luamsgconvert
             "Import", &CLuaMsgConvert::Import,
             "MsgConvert", &CLuaMsgConvert::MsgConvert
             );
-
         return module;
-    }    
+    }
 }
 
 LUAMOD_API int luaopen_luamsgconvert(lua_State* L)
