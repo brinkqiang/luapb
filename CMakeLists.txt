@@ -161,6 +161,13 @@ ELSEIF (UNIX)
     ENDIF(USE_LUAPB_TEST)
 ENDIF ()
 
+ADD_CUSTOM_TARGET(
+    luapb_config
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/proto
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/src/luamsgconvert/proto/comm.proto ${CMAKE_CURRENT_SOURCE_DIR}/bin/proto/comm.proto
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+ADD_DEPENDENCIES(luapb luapb_config)
 #ADD_CUSTOM_COMMAND(
 #TARGET luapbtest
 #PRE_BUILD
