@@ -4,6 +4,11 @@ local pb = require("luapb")
 local luajson = require("luajson")
 pb.import("net.proto")
 
+function bin2hex(s)
+    s = string.gsub(s,"(.)",function (x) return string.format("%02X ",string.byte(x)) end)
+    return s
+end
+
 function pb_msgconvert()
     local msg = {
         number = "13615632545",
@@ -22,7 +27,9 @@ function pb_msgconvert()
             }
         }
     }
-    pb.msgconvert(10001, 10002, "net.tb_Person", msg);
+    local buf = pb.msgconvert(10001, 10002, "net.tb_Person", msg)
+    print("pb_msgconvert:   " .. bin2hex(buf))
+
 end
 
 function pb_msgconvert2()
@@ -43,7 +50,8 @@ function pb_msgconvert2()
     job2.jobtype = 9527
     job2.jobdesc = "coder2"
 
-    pb.msgconvert2(10001, 10002, msg);
+    local buf = pb.msgconvert2(10001, 10002, msg)
+    print("pb_msgconvert2:  " .. bin2hex(buf))
 end
 pb_msgconvert()
 pb_msgconvert2()
