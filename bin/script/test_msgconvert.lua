@@ -5,7 +5,7 @@ local luajson = require("luajson")
 pb.import("net.proto")
 
 function pb_msgconvert()
-    local message = {
+    local msg = {
         number = "13615632545",
         email = "13615632545@163.com",
         age = 28,
@@ -22,7 +22,7 @@ function pb_msgconvert()
             }
         }
     }
-    pb.msgconvert(10001, 10002, msg);
+    pb.msgconvert(10001, 10002, "net.tb_Person", msg);
 end
 
 function pb_msgconvert2()
@@ -45,3 +45,5 @@ function pb_msgconvert2()
 
     pb.msgconvert2(10001, 10002, msg);
 end
+pb_msgconvert()
+pb_msgconvert2()

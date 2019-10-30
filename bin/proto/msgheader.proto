@@ -12,7 +12,7 @@ syntax = "proto2";
 // [START enums]
 enum CMSG {
   MSGIDdefault = 0;
-  MSGIDtb_Person = 8345;
+  MSGIDtb_Person = 8000;
 }
 // [END enums]
 

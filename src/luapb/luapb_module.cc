@@ -2012,10 +2012,10 @@ static int name2id(lua_State *L)
 
 static int msgconvert(lua_State *L)
 {
-    uint64_t qwSessionID(lua_tointeger(L, -3));
-    int cmd(lua_tointeger(L, -2));
+    uint64_t qwSessionID(lua_tointeger(L, -4));
+    int cmd(lua_tointeger(L, -3));
 
-    const std::string name(lua_tostring(L, -1));
+    const std::string name(lua_tostring(L, -2));
 
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
@@ -2073,21 +2073,11 @@ static int msgconvert(lua_State *L)
 
 static int msgconvert2(lua_State *L)
 {
-    uint64_t qwSessionID(lua_tointeger(L, -4));
-    int cmd(lua_tointeger(L, -3));
+    uint64_t qwSessionID(lua_tointeger(L, -3));
+    int cmd(lua_tointeger(L, -2));
 
-    const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
-    if (NULL == message)
-    {
-        luaL_argerror(L, (2),
-            "msgconvert2 !!");
-        return 0;
-    }
-
-    ParseMessage(L, message);
-
-    google::protobuf::Message& msg = *(message);
+    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, -1, PB_MESSAGE_META);
+    google::protobuf::Message& msg = *(luamsg->msg);
 
     std::string data;
     data.resize(sizeof(cmd) + msg.ByteSize());
