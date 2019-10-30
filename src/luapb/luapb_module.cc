@@ -35,6 +35,9 @@
 #include <fstream>
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/emittermanip.h"
+#include "luamsgconvert/pbhelper.hpp"
+#include "luamsgconvert/protocol.h"
+#include "luamsgconvert/proto/comm.pb.h"
 
 using namespace google::protobuf;
 using namespace pugi;
@@ -2007,6 +2010,128 @@ static int name2id(lua_State *L)
     return 1;
 }
 
+static int msgconvert(lua_State *L)
+{
+    uint64_t qwSessionID(lua_tointeger(L, -3));
+    int cmd(lua_tointeger(L, -2));
+
+    const std::string name(lua_tostring(L, -1));
+
+    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    if (NULL == message)
+    {
+        luaL_argerror(L, (2), "table2xml !!");
+        return 0;
+    }
+
+    ParseMessage(L, message);
+
+    google::protobuf::Message& msg = *(message);
+
+    std::string data;
+    data.resize(sizeof(cmd) + msg.ByteSize());
+    char* buff = const_cast<char*>(data.data());
+    memcpy(buff, &cmd, sizeof(cmd));
+    PBHelper::encode_pb_message_to(buff + sizeof(cmd), msg);
+
+    TcpMsgHeader tcpHeader;
+    tcpHeader.ctl = TcpControl::CTL_DATA;
+    tcpHeader.enc = ECNRYPTWORD;
+    tcpHeader.len = data.size();
+
+    std::string temp;
+    temp.resize(tcpHeader.size() + data.size());
+    char* buffer = const_cast<char*>(temp.data());
+    memcpy(buffer, &tcpHeader, tcpHeader.size());
+    memcpy(buffer + tcpHeader.size(), data.data(), data.size());
+
+    std::string strMsgByte;
+    msg.SerializeToString(&strMsgByte);
+
+    std::string strServiceName = msg.GetDescriptor()->file()->package();
+    std::string strMsgName = msg.GetDescriptor()->name();
+
+    static uint64_t m_dwSequence = 0;
+
+    std::string out;
+    protocol::comm_message xMsg;
+    xMsg.set_msgtype(cmd);
+    xMsg.set_sequence(++m_dwSequence);
+    xMsg.set_code(0);
+    xMsg.set_session(qwSessionID);
+    xMsg.set_traceid("");
+    xMsg.set_service(strServiceName);
+    xMsg.set_message(strMsgName);
+    xMsg.set_data(strMsgByte);
+
+    xMsg.SerializeToString(&out);
+
+    lua_pushlstring(L, out.c_str(), out.length());
+
+    return 1;
+}
+
+static int msgconvert2(lua_State *L)
+{
+    uint64_t qwSessionID(lua_tointeger(L, -4));
+    int cmd(lua_tointeger(L, -3));
+
+    const std::string name(lua_tostring(L, -2));
+    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    if (NULL == message)
+    {
+        luaL_argerror(L, (2),
+            "msgconvert2 !!");
+        return 0;
+    }
+
+    ParseMessage(L, message);
+
+    google::protobuf::Message& msg = *(message);
+
+    std::string data;
+    data.resize(sizeof(cmd) + msg.ByteSize());
+    char* buff = const_cast<char*>(data.data());
+    memcpy(buff, &cmd, sizeof(cmd));
+    PBHelper::encode_pb_message_to(buff + sizeof(cmd), msg);
+
+    TcpMsgHeader tcpHeader;
+    tcpHeader.ctl = TcpControl::CTL_DATA;
+    tcpHeader.enc = ECNRYPTWORD;
+    tcpHeader.len = data.size();
+
+    std::string temp;
+    temp.resize(tcpHeader.size() + data.size());
+    char* buffer = const_cast<char*>(temp.data());
+    memcpy(buffer, &tcpHeader, tcpHeader.size());
+    memcpy(buffer + tcpHeader.size(), data.data(), data.size());
+
+    std::string strMsgByte;
+    msg.SerializeToString(&strMsgByte);
+
+    std::string strServiceName = msg.GetDescriptor()->file()->package();
+    std::string strMsgName = msg.GetDescriptor()->name();
+    
+    static uint64_t m_dwSequence = 0;
+
+    std::string out;
+    protocol::comm_message xMsg;
+    xMsg.set_msgtype(cmd);
+    xMsg.set_sequence(++m_dwSequence);
+    xMsg.set_code(0);
+    xMsg.set_session(qwSessionID);
+    xMsg.set_traceid("");
+    xMsg.set_service(strServiceName);
+    xMsg.set_message(strMsgName);
+    xMsg.set_data(strMsgByte);
+
+    xMsg.SerializeToString(&out);
+
+    lua_pushlstring(L, out.c_str(), out.length());
+
+    return 1;
+}
+
 static const struct luaL_Reg lib[] = {
     {"new", pb_new},
     {"import", pb_import},
@@ -2025,6 +2150,9 @@ static const struct luaL_Reg lib[] = {
     {"json2xml", json2xml},
     {"table2yaml", table2yaml},
     {"yaml2table", yaml2table},
+
+    {"msgconvert", msgconvert},
+    {"msgconvert2", msgconvert2},
     {NULL, NULL}
 };
 
