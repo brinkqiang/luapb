@@ -2020,7 +2020,7 @@ static int msgconvert(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
-        luaL_argerror(L, (2), "table2xml !!");
+        luaL_argerror(L, (2), "msgconvert CreateMessage error!!");
         return 0;
     }
 
@@ -2077,6 +2077,11 @@ static int msgconvert2(lua_State *L)
     int cmd(lua_tointeger(L, -2));
 
     lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, -1, PB_MESSAGE_META);
+    if (NULL == luamsg)
+    {
+        luaL_argerror(L, (2), "msgconvert2 luaL_checkudata error!!");
+        return 0;
+    }
     google::protobuf::Message& msg = *(luamsg->msg);
 
     std::string data;
