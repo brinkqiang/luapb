@@ -1,7 +1,6 @@
 -- lua script
 
 local pb = require("luapb")
-local luajson = require("luajson")
 pb.import("net.proto")
 
 function bin2hex(s)
