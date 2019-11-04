@@ -16,7 +16,7 @@ void CProtoMsg::Import(google::protobuf::compiler::Importer& oImporter)
 {
     Reset();
 
-    DoActionMsgID(oImporter, "CMSG", "MSGID", "net");
+    DoActionMsgID(oImporter, "MSGID", "MSGID_", "net");
 }
 
 void CProtoMsg::DoActionMsgID(google::protobuf::compiler::Importer& oImporter, std::string strMsgEnumName, std::string strSplitName, std::string strPackageName)
