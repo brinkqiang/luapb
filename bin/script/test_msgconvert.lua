@@ -3,6 +3,9 @@
 local pb = require("luapb")
 pb.import("net.proto")
 
+print("ID2Name: " .. pb.id2name(8000))
+print("Name2ID: " .. pb.name2id("net.tb_Person"))
+
 function bin2hex(s)
     s = string.gsub(s,"(.)",function (x) return string.format("%02X ",string.byte(x)) end)
     return s
