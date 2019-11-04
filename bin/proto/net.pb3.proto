@@ -12,7 +12,7 @@ package net;
 
 
 // [START enums]
-enum MessageId {
+enum MSGID {
   MSGID_tb_Person = 0;
 }
 

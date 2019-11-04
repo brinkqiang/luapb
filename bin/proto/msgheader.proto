@@ -8,7 +8,7 @@
 
 // [START declaration]
 syntax = "proto3";
-
+package net;
 // [START enums]
 enum MSGID {
   MSGID_default = 0;
