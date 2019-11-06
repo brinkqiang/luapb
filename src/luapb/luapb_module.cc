@@ -920,8 +920,7 @@ static int encode(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
-        luaL_argerror(L, (2),
-                      "encode !!");
+        luaL_argerror(L, (2), "encode CreateMessage failed!!");
         return 0;
     }
     ParseMessage(L, message);
@@ -929,7 +928,8 @@ static int encode(lua_State *L)
     std::string buffer;
     if (!message->SerializeToString(&buffer))
     {
-        printf("Failed to serialize message: proto.%s\n", lua_tostring(L, -2));
+        luaL_argerror(L, (2), "encode SerializeToString failed!!");
+        return 0;
     }
     lua_pushlstring(L, buffer.c_str(), buffer.length());
 
@@ -946,6 +946,7 @@ static int decode(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
+        luaL_argerror(L, (2), "decode CreateMessage failed!!");
         return 0;
     }
     size_t len;
@@ -953,7 +954,8 @@ static int decode(lua_State *L)
     std::string buffer(s, len);
     if (!message->ParseFromString(buffer))
     {
-        printf("Failed to parse message: proto.%s\n", lua_tostring(L, -2));
+        luaL_argerror(L, (2), "decode ParseFromString failed!!");
+        return 0;
     }
 
     WriteMessage(L, message);
@@ -967,8 +969,7 @@ static int table2json(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
-        luaL_argerror(L, (2),
-                      "encode !!");
+        luaL_argerror(L, (2), "table2json CreateMessage failed !!");
         return 0;
     }
 
@@ -988,6 +989,7 @@ static int json2table(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
+        luaL_argerror(L, (2), "json2table CreateMessage failed !!");
         return 0;
     }
     size_t len;
@@ -1438,7 +1440,7 @@ static int table2xml(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
-        luaL_argerror(L, (2), "table2xml !!");
+        luaL_argerror(L, (2), "table2xml CreateMessage failed !!");
         return 0;
     }
 
@@ -1462,6 +1464,7 @@ static int xml2table(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
+        luaL_argerror(L, (2), "xml2table CreateMessage failed !!");
         return 0;
     }
     size_t len;
@@ -1911,7 +1914,7 @@ static int table2yaml(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
-        luaL_argerror(L, (2), "table2xml !!");
+        luaL_argerror(L, (2), "table2yaml CreateMessage failed !!");
         return 0;
     }
 
@@ -1937,6 +1940,7 @@ static int yaml2table(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
+        luaL_argerror(L, (2), "yaml2table CreateMessage failed !!");
         return 0;
     }
     size_t len;
@@ -1957,6 +1961,7 @@ static int xml2json(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
+        luaL_argerror(L, (2), "xml2json CreateMessage failed !!");
         return 0;
     }
     size_t len;
@@ -1983,6 +1988,7 @@ static int json2xml(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
+        luaL_argerror(L, (2), "json2xml CreateMessage failed !!");
         return 0;
     }
     size_t len;
@@ -2010,7 +2016,48 @@ static int name2id(lua_State *L)
     return 1;
 }
 
-static int msgconvert(lua_State *L)
+static int msgconvert_comm2starve(lua_State *L)
+{
+    protocol::comm_message xMsg;
+
+    size_t len;
+    const char *s = lua_tolstring(L, -1, &len);
+    std::string buffer(s, len);
+
+    TcpMsgHeader tcpHeader;
+    memcpy(&tcpHeader, buffer.data(), sizeof(tcpHeader));
+    buffer.erase(buffer.begin(), buffer.begin() +  sizeof(tcpHeader));
+
+    if (!xMsg.ParseFromString(buffer))
+    {
+        luaL_argerror(L, (2), "msgconvert_comm2starve ParseFromString failed!!");
+        return 0;
+    }
+
+    //xMsg.PrintDebugString();
+
+    std::string strMsgName = xMsg.service() + "." + xMsg.message();
+    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(strMsgName);
+    if (NULL == message)
+    {
+        luaL_argerror(L, (2), "msgconvert_comm2starve CreateMessage error!!");
+        return 0;
+    }
+
+    if (!message->ParseFromString(xMsg.data()))
+    {
+        luaL_argerror(L, (2), "msgconvert_comm2starve ParseFromString failed!!");
+        return 0;
+    }
+
+    //message->PrintDebugString();
+    WriteMessage(L, message);
+
+    ProtoImporterMgr::Instance()->ReleaseMessage(message);
+    return 1;
+}
+
+static int msgconvert_starve2comm(lua_State *L)
 {
     uint64_t qwSessionID(lua_tointeger(L, -4));
     int cmd(lua_tointeger(L, -3));
@@ -2020,7 +2067,7 @@ static int msgconvert(lua_State *L)
     google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
-        luaL_argerror(L, (2), "msgconvert CreateMessage error!!");
+        luaL_argerror(L, (2), "msgconvert_starve2comm CreateMessage error!!");
         return 0;
     }
 
@@ -2028,22 +2075,18 @@ static int msgconvert(lua_State *L)
 
     google::protobuf::Message& msg = *(message);
 
-    std::string data;
-    data.resize(sizeof(cmd) + msg.ByteSize());
-    char* buff = const_cast<char*>(data.data());
-    memcpy(buff, &cmd, sizeof(cmd));
-    PBHelper::encode_pb_message_to(buff + sizeof(cmd), msg);
+    //msg.PrintDebugString();
 
     TcpMsgHeader tcpHeader;
     tcpHeader.ctl = TcpControl::CTL_DATA;
     tcpHeader.enc = ECNRYPTWORD;
-    tcpHeader.len = data.size();
+    tcpHeader.len = msg.ByteSize();
 
-    std::string temp;
-    temp.resize(tcpHeader.size() + data.size());
-    char* buffer = const_cast<char*>(temp.data());
+    std::string out;
+    out.resize(tcpHeader.size());
+    
+    char* buffer = const_cast<char*>(out.data());
     memcpy(buffer, &tcpHeader, tcpHeader.size());
-    memcpy(buffer + tcpHeader.size(), data.data(), data.size());
 
     std::string strMsgByte;
     msg.SerializeToString(&strMsgByte);
@@ -2053,7 +2096,7 @@ static int msgconvert(lua_State *L)
 
     static uint64_t m_dwSequence = 0;
 
-    std::string out;
+    std::string comm_msg;
     protocol::comm_message xMsg;
     xMsg.set_msgtype(cmd);
     xMsg.set_sequence(++m_dwSequence);
@@ -2064,14 +2107,57 @@ static int msgconvert(lua_State *L)
     xMsg.set_message(strMsgName);
     xMsg.set_data(strMsgByte);
 
-    xMsg.SerializeToString(&out);
+    xMsg.SerializeToString(&comm_msg);
+
+    out.append(comm_msg);
 
     lua_pushlstring(L, out.c_str(), out.length());
 
     return 1;
 }
 
-static int msgconvert2(lua_State *L)
+static int msgconvert2_comm2starve(lua_State *L)
+{
+    protocol::comm_message xMsg;
+
+    size_t len;
+    const char *s = lua_tolstring(L, -1, &len);
+    std::string buffer(s, len);
+
+    TcpMsgHeader tcpHeader;
+    memcpy(&tcpHeader, buffer.data(), sizeof(tcpHeader));
+    buffer.erase(buffer.begin(), buffer.begin() + sizeof(tcpHeader));
+
+    if (!xMsg.ParseFromString(buffer))
+    {
+        luaL_argerror(L, (2), "msgconvert_comm2starve ParseFromString failed!!");
+        return 0;
+    }
+
+    //xMsg.PrintDebugString();
+
+    std::string strMsgName = xMsg.service() + "." + xMsg.message();
+    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(strMsgName);
+    if (NULL == message)
+    {
+        luaL_argerror(L, (2), "msgconvert_comm2starve CreateMessage error!!");
+        return 0;
+    }
+
+    if (!message->ParseFromString(xMsg.data()))
+    {
+        luaL_argerror(L, (2), "msgconvert_comm2starve ParseFromString failed!!");
+        return 0;
+    }
+
+    //message->PrintDebugString();
+    WriteMessage(L, message);
+
+    ProtoImporterMgr::Instance()->ReleaseMessage(message);
+    return 1;
+}
+
+static int msgconvert2_starve2comm(lua_State *L)
 {
     uint64_t qwSessionID(lua_tointeger(L, -3));
     int cmd(lua_tointeger(L, -2));
@@ -2083,33 +2169,28 @@ static int msgconvert2(lua_State *L)
         return 0;
     }
     google::protobuf::Message& msg = *(luamsg->msg);
-
-    std::string data;
-    data.resize(sizeof(cmd) + msg.ByteSize());
-    char* buff = const_cast<char*>(data.data());
-    memcpy(buff, &cmd, sizeof(cmd));
-    PBHelper::encode_pb_message_to(buff + sizeof(cmd), msg);
+    //msg.PrintDebugString();
 
     TcpMsgHeader tcpHeader;
     tcpHeader.ctl = TcpControl::CTL_DATA;
     tcpHeader.enc = ECNRYPTWORD;
-    tcpHeader.len = data.size();
+    tcpHeader.len = msg.ByteSize();
 
-    std::string temp;
-    temp.resize(tcpHeader.size() + data.size());
-    char* buffer = const_cast<char*>(temp.data());
+    std::string out;
+    out.resize(tcpHeader.size());
+
+    char* buffer = const_cast<char*>(out.data());
     memcpy(buffer, &tcpHeader, tcpHeader.size());
-    memcpy(buffer + tcpHeader.size(), data.data(), data.size());
 
     std::string strMsgByte;
     msg.SerializeToString(&strMsgByte);
 
     std::string strServiceName = msg.GetDescriptor()->file()->package();
     std::string strMsgName = msg.GetDescriptor()->name();
-    
+
     static uint64_t m_dwSequence = 0;
 
-    std::string out;
+    std::string comm_msg;
     protocol::comm_message xMsg;
     xMsg.set_msgtype(cmd);
     xMsg.set_sequence(++m_dwSequence);
@@ -2120,7 +2201,9 @@ static int msgconvert2(lua_State *L)
     xMsg.set_message(strMsgName);
     xMsg.set_data(strMsgByte);
 
-    xMsg.SerializeToString(&out);
+    xMsg.SerializeToString(&comm_msg);
+
+    out.append(comm_msg);
 
     lua_pushlstring(L, out.c_str(), out.length());
 
@@ -2145,9 +2228,11 @@ static const struct luaL_Reg lib[] = {
     {"json2xml", json2xml},
     {"table2yaml", table2yaml},
     {"yaml2table", yaml2table},
+    {"msgconvert_starve2comm", msgconvert_starve2comm},
+    {"msgconvert_comm2starve", msgconvert_comm2starve},
+    {"msgconvert2_starve2comm", msgconvert2_starve2comm},
+    {"msgconvert2_comm2starve", msgconvert2_comm2starve},
 
-    {"msgconvert", msgconvert},
-    {"msgconvert2", msgconvert2},
     {NULL, NULL}
 };
 

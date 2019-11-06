@@ -10,6 +10,7 @@
 #include <google/protobuf/compiler/importer.h>
 #include "protomsg.h"
 
+
 class ProtoImporterImpl {
   public:
     ProtoImporterImpl();

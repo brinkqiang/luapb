@@ -29,9 +29,14 @@ function pb_msgconvert()
             }
         }
     }
-    local buf = pb.msgconvert(10001, 10002, "net.tb_Person", msg)
-    print("pb_msgconvert:   " .. bin2hex(buf))
+    local sessionid = 100001
+    local cmd = 10002
+    local buf = pb.msgconvert_starve2comm(sessionid, cmd, "net.tb_Person", msg)
+    print("msgconvert_starve2comm:   " .. sessionid .. "::" .. cmd .. "::\n" .. bin2hex(buf))
 
+    local msg2  = pb.msgconvert_comm2starve(buf)
+    local buf2 = pb.msgconvert_starve2comm(sessionid, cmd, "net.tb_Person", msg2)
+    print("msgconvert_starve2comm:   " .. sessionid .. "::" .. cmd .. "::\n" .. bin2hex(buf2))
 end
 
 function pb_msgconvert2()
@@ -56,4 +61,3 @@ function pb_msgconvert2()
     print("pb_msgconvert2:  " .. bin2hex(buf))
 end
 pb_msgconvert()
-pb_msgconvert2()
