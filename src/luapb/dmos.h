@@ -118,6 +118,7 @@ using namespace stdext;
 #include <netdb.h>
 #include <limits.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #ifndef MAX_PATH
 #define MAX_PATH    PATH_MAX
