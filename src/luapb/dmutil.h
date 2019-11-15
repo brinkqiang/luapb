@@ -172,7 +172,7 @@ static std::string DMGetModulePath() {
     static std::once_flag flag;
     std::call_once(flag, []() {
         Dl_info DLInfo;
-        int err = dladdr(&DMGetModulePath, &DLInfo);
+        int err = dladdr((const void*)&DMGetModulePath, &DLInfo);
         if (err == 0)
             return "";
 
