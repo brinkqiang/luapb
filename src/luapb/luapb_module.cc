@@ -38,6 +38,7 @@
 #include "luamsgconvert/pbhelper.hpp"
 #include "luamsgconvert/protocol.h"
 #include "luamsgconvert/proto/comm.pb.h"
+#include "dmutil.h"
 
 using namespace google::protobuf;
 using namespace pugi;
@@ -2051,10 +2052,12 @@ static int msgconvert_comm2starve(lua_State *L)
     }
 
     //message->PrintDebugString();
+    lua_pushinteger(L, xMsg.session());
+    lua_pushinteger(L, xMsg.msgtype());
     WriteMessage(L, message);
 
     ProtoImporterMgr::Instance()->ReleaseMessage(message);
-    return 1;
+    return 3;
 }
 
 static int msgconvert_starve2comm(lua_State *L)
@@ -2151,10 +2154,12 @@ static int msgconvert2_comm2starve(lua_State *L)
     }
 
     //message->PrintDebugString();
+    lua_pushinteger(L, xMsg.session());
+    lua_pushinteger(L, xMsg.msgtype());
     WriteMessage(L, message);
 
     ProtoImporterMgr::Instance()->ReleaseMessage(message);
-    return 1;
+    return 3;
 }
 
 static int msgconvert2_starve2comm(lua_State *L)
@@ -2209,7 +2214,12 @@ static int msgconvert2_starve2comm(lua_State *L)
 
     return 1;
 }
-
+static int getmodulepath(lua_State *L)
+{
+    std::string strPath = DMGetModulePath();
+    lua_pushlstring(L, strPath.c_str(), strPath.length());
+    return 1;
+}
 static const struct luaL_Reg lib[] = {
     {"new", pb_new},
     {"import", pb_import},
@@ -2232,7 +2242,7 @@ static const struct luaL_Reg lib[] = {
     {"msgconvert_comm2starve", msgconvert_comm2starve},
     {"msgconvert2_starve2comm", msgconvert2_starve2comm},
     {"msgconvert2_comm2starve", msgconvert2_comm2starve},
-
+    {"getmodulepath", getmodulepath},
     {NULL, NULL}
 };
 

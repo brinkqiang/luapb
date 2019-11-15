@@ -148,6 +148,49 @@ static inline bool DMCreateDirectories(const char* dir_name) {
     return DMCreateDirectory(dir_name);
 }
 
+#ifdef WIN32
+static HMODULE GetSelfModuleHandle()
+{
+    MEMORY_BASIC_INFORMATION mbi;
+    return ((::VirtualQuery(&GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0) ? (HMODULE)mbi.AllocationBase : NULL);
+}
+#endif
+
+static std::string DMGetModulePath() {
+#ifdef WIN32
+    static char path[MAX_PATH];
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        GetModuleFileNameA(GetSelfModuleHandle(), path, sizeof(path));
+        char* p = strrchr(path, '\\');
+        *(p) = '\0';
+    });
+
+    return path;
+#else
+    static char path[MAX_PATH];
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        Dl_info DLInfo;
+        int err = dladdr(&DMGetModulePath, &DLInfo);
+        if (err == 0)
+            return "";
+
+        // If the filename is a symlink, we need to resolve and return the location of
+        // the actual executable.
+
+        if (!realpath(DLInfo.dli_fname, path))
+        {
+            return "";
+        }
+
+        char* p = strrchr(path, '/');
+        *(p) = '\0';
+    });
+    return path;
+#endif
+}
+
 static std::string DMGetRootPath() {
 #ifdef WIN32
     static char path[MAX_PATH];
