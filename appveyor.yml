@@ -45,6 +45,7 @@ test_script:
 # Environment variables https://www.appveyor.com/docs/environment-variables/
 - cd bin/relwithdebinfo
 - lua ../script/test_luaprotobuf.lua
+- lua ../script/test_msgconvert.lua
 
 #deploy:
 #  release: "%APPVEYOR_PROJECT_NAME%-v%APPVEYOR_BUILD_VERSION%"

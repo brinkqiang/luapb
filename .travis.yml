@@ -78,6 +78,7 @@ script:
 after_success:
   - cd bin/$BUILD_TYPE
   - "if [ -f lua ] ; then ./lua ../script/test_luaprotobuf.lua ; fi"
+  - "if [ -f lua ] ; then ./lua ../script/test_msgconvert.lua ; fi"
 
 after_failure:
   - echo failure
