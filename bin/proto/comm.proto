@@ -1,0 +1,39 @@
+syntax = "proto3";
+package protocol;
+
+
+/* tcp package head
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++---------------+---------------+---------------+---+-+-+-+-+-+-+
+|                                               | C |           |
+|                                               | T |ENCRYPTION |
+|     Payload Data length(LittleEndian)         | R |   WORD    |
+|                                               | L |           |
+|                (24 bit)                       |(2)|    (6)    |
++---------------+---------------+---------------+-+-+-+-+-+-+-+-+
+:                     Payload Data continued ...                :
++---------------------------------------------------------------+
+*(CTRL bit):
+00 : data
+01 : ping
+10 : pong
+11 : close
+
+*(describe encryption scheme):
+encryption word:  5
+
+Message_Type_Request   = uint32(0)		//request message
+Message_Type_Response  = uint32(1)		//response message
+*/
+//message definition
+message comm_message {
+	uint32 		msgType  = 1; 
+	uint32 		sequence = 2;
+	sint32		code	 = 3;
+	uint64		session	 = 4;
+	string		traceId	 = 5;
+	string 		service  = 11;		//proto package
+	string 		message  = 12;		//proto message
+	bytes		data	 = 13;
+}
