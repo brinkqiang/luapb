@@ -162,8 +162,8 @@ static std::string DMGetModulePath() {
 #ifdef WIN32
     static char path[MAX_PATH];
     static std::atomic_bool first_time(true);
-
-    std::call_once(flag, []() {
+    if ( first_time ) {
+        first_time = false;
         GetModuleFileNameA(GetSelfModuleHandle(), path, sizeof(path));
         char* p = strrchr(path, '\\');
         *(p) = '\0';
@@ -172,7 +172,8 @@ static std::string DMGetModulePath() {
     return path;
 #else
     static char path[MAX_PATH];
-    static std::once_flag flag;
+    static std::atomic_bool first_time(true);
+
     if ( first_time ) {
         first_time = false;
 
