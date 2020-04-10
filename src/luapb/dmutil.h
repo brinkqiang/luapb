@@ -167,7 +167,7 @@ static std::string DMGetModulePath() {
         GetModuleFileNameA(GetSelfModuleHandle(), path, sizeof(path));
         char* p = strrchr(path, '\\');
         *(p) = '\0';
-    });
+    };
 
     return path;
 #else
