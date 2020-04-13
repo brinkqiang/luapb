@@ -10,7 +10,6 @@ class ProtobufLibrary {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
     };
     virtual ~ProtobufLibrary() {
-        // fixed memory leak
         google::protobuf::ShutdownProtobufLibrary();
     }
 };
