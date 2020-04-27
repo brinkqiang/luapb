@@ -24,7 +24,7 @@
 #include "protocol.h"
 #include "proto/comm.pb.h"
 #include "pbhelper.hpp"
-#include "protoimporter.h"
+#include "../protoimporter.h"
 
 static const int64_t PING_SEND_INTERVAL = 10 * 1000;
 static const int64_t MAX_RECV_PACKAGE_LEN = 1024 * 10;
