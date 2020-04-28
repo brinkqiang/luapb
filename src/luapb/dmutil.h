@@ -396,13 +396,8 @@ static std::string DMGetWorkPath() {
 }
 
 static void DMSetWorkPath() {
-#ifdef WIN32
     std::string strPath = DMGetRootPath() + "\\..\\";
     chdir(strPath.c_str());
-#else
-    std::string strPath = DMGetRootPath();
-    chdir(strPath.c_str());
-#endif
 }
 
 static void DMSetWorkPath(std::string& strPath) {
