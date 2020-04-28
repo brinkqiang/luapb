@@ -396,7 +396,7 @@ static std::string DMGetWorkPath() {
 }
 
 static void DMSetWorkPath() {
-    std::string strPath = DMGetRootPath() + "\\..\\";
+    std::string strPath = DMGetRootPath() + PATH_DELIMITER_STR + ".." + PATH_DELIMITER_STR;
     chdir(strPath.c_str());
 }
 
