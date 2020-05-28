@@ -1,4 +1,24 @@
 
+# Copyright (c) 2018 brinkqiang (brink.qiang@gmail.com)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 macro(SUBDIRLIST result curdir)
     FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
     SET(dirlist "")
@@ -59,6 +79,7 @@ macro(ModuleImport ModuleName ModulePath)
     IF (DMLIBS_FOUND STREQUAL "-1")
         LIST(APPEND DMLIBS ${ModuleName})
         SET_PROPERTY(GLOBAL PROPERTY DMLIBS ${DMLIBS})
+
         MESSAGE(STATUS "LIST APPEND ${ModuleName} ${DMLIBS}" )
 
         IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath}/CMakeLists.txt)
@@ -251,3 +272,38 @@ macro(ModuleImport2 ModuleName ModulePath)
 
     ModuleInclude2(${ModuleName} ${ModulePath})
 endmacro(ModuleImport2)
+
+macro(ModuleImportAll ModulePath)
+    MESSAGE(STATUS "ModuleImportAll ${ModulePath}")
+
+    IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath})
+        SUBDIRLIST(SUBDIRS ${CMAKE_CURRENT_SOURCE_DIR}/${ModulePath})
+        FOREACH(subdir ${SUBDIRS})
+            MESSAGE(STATUS "ModuleImportAll ${subdir} ${ModulePath}/${subdir}")
+
+            ModuleImport(${subdir} ${ModulePath}/${subdir})
+        ENDFOREACH()
+    ENDIF()
+endmacro(ModuleImportAll)
+
+macro(ModuleConfigure ModuleName)
+    IF (WIN32)
+        ADD_CUSTOM_TARGET(
+            ${ModuleName}_configure
+            COMMAND echo "${ModuleName}_config"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            )
+    ELSEIF (APPLE)
+        ADD_CUSTOM_TARGET(
+            ${ModuleName}_configure
+            COMMAND glibtoolize && aclocal && autoheader && autoconf && automake --add-missing && sh configure
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            )
+    ELSEIF (UNIX)
+        ADD_CUSTOM_TARGET(
+            ${ModuleName}_configure
+            COMMAND libtoolize && aclocal && autoheader && autoconf && automake --add-missing && sh configure
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            )
+    ENDIF()
+endmacro(ModuleConfigure)
