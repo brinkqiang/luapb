@@ -33,8 +33,8 @@ lua ..\script\msg.lua
 linux
 ```
 bash build.sh
-cd bin\relwithdebinfo
-lua ..\script\msg.lua  
+cd bin/relwithdebinfo
+./lua ../script/msg.lua  
 ```
 
 ```
