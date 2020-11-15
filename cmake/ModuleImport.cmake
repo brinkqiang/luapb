@@ -1,24 +1,4 @@
 
-# Copyright (c) 2018 brinkqiang (brink.qiang@gmail.com)
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 macro(SUBDIRLIST result curdir)
     FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
     SET(dirlist "")
@@ -286,24 +266,52 @@ macro(ModuleImportAll ModulePath)
     ENDIF()
 endmacro(ModuleImportAll)
 
-macro(ModuleConfigure ModuleName)
+macro(ModuleConfigure ModuleName ModulePath)
     IF (WIN32)
         ADD_CUSTOM_TARGET(
             ${ModuleName}_configure
             COMMAND echo "${ModuleName}_config"
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            WORKING_DIRECTORY ${ModulePath}
             )
     ELSEIF (APPLE)
         ADD_CUSTOM_TARGET(
             ${ModuleName}_configure
             COMMAND glibtoolize && aclocal && autoheader && autoconf && automake --add-missing && sh configure
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            WORKING_DIRECTORY ${ModulePath}
             )
     ELSEIF (UNIX)
         ADD_CUSTOM_TARGET(
             ${ModuleName}_configure
             COMMAND libtoolize && aclocal && autoheader && autoconf && automake --add-missing && sh configure
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            WORKING_DIRECTORY ${ModulePath}
             )
     ENDIF()
+
+    ADD_DEPENDENCIES(${ModuleName} ${ModuleName}_configure)
 endmacro(ModuleConfigure)
+
+macro(ModuleCommand ModuleName ModulePath CommandLine)
+    MESSAGE(STATUS "ModuleCommand ${ModuleName} ${ModulePath} ${CommandLine}")
+
+    IF (WIN32)
+        ADD_CUSTOM_TARGET(
+            ${ModuleName}_command
+            COMMAND ${CommandLine}
+            WORKING_DIRECTORY ${ModulePath}
+            )
+    ELSEIF (APPLE)
+        ADD_CUSTOM_TARGET(
+            ${ModuleName}_command
+            COMMAND ${CommandLine}
+            WORKING_DIRECTORY ${ModulePath}
+            )
+    ELSEIF (UNIX)
+        ADD_CUSTOM_TARGET(
+            ${ModuleName}_command
+            COMMAND ${CommandLine}
+            WORKING_DIRECTORY ${ModulePath}
+            )
+    ENDIF()
+
+    ADD_DEPENDENCIES(${ModuleName} ${ModuleName}_command)
+endmacro(ModuleCommand)
