@@ -100,13 +100,26 @@ ProtoImporterMgr::ProtoImporterMgr() {
     std::string strProtoPath2 = strRoot + PATH_DELIMITER_STR + ".." +
                                 PATH_DELIMITER_STR + "proto";
 
+    std::string strCWD = DMGetWorkPath();
+    std::string strCWDPath = strCWD + PATH_DELIMITER_STR + "proto";
+    std::string strCWDPath2 = strCWD + PATH_DELIMITER_STR + ".." + PATH_DELIMITER_STR + "proto";
+
     sourceTree.MapPath("", strRoot);
     sourceTree.MapPath("", strProtoPath);
     sourceTree.MapPath("", strProtoPath2);
 
+    sourceTree.MapPath("", strCWD);
+    sourceTree.MapPath("", strCWDPath);
+    sourceTree.MapPath("", strCWDPath2);
+
     printf("[ProtoImporter] protopath:%s\n", strRoot.c_str());
     printf("[ProtoImporter] protopath:%s\n", strProtoPath.c_str());
     printf("[ProtoImporter] protopath:%s\n", strProtoPath2.c_str());
+
+    printf("[ProtoImporter] protopath:%s\n", strCWD.c_str());
+    printf("[ProtoImporter] protopath:%s\n", strCWDPath.c_str());
+    printf("[ProtoImporter] protopath:%s\n", strCWDPath2.c_str());
+
     SetImporter(new ProtoImporterImpl());
 }
 
