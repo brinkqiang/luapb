@@ -33,18 +33,22 @@ endmacro()
 macro(LuaModuleImport LuaVersion ModuleName ModulePath DependLibs)
     MESSAGE(STATUS "LuaModuleImport ${LuaVersion} ${ModuleName} ${ModulePath}")
 
-    GET_PROPERTY(DMLIBS GLOBAL PROPERTY DMLIBS)
+    GET_PROPERTY(LUA_MODULES GLOBAL PROPERTY LUA_MODULES)
 
-    LIST(FIND DMLIBS ${ModuleName} DMLIBS_FOUND)
-    IF (NOT (DMLIBS_FOUND STREQUAL "-1"))
+    LIST(FIND LUA_MODULES ${ModuleName} LUA_MODULES_FOUND)
+
+    GET_PROPERTY(LUA_LIB GLOBAL PROPERTY LUA_LIB)
+
+    LIST(FIND LUA_LIB ${LuaVersion} LUA_LIB_FOUND)
+
+    IF (NOT (LUA_MODULES_FOUND STREQUAL "-1"))
         MESSAGE(STATUS "LuaModuleImport repeat ModuleName:${ModuleName}" )
         RETURN()
     ENDIF()
-    
+
     LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lib/${ModuleName})
 
-    LIST(FIND DMLIBS ${LuaVersion} DMLIBS_FOUND)
-    IF (DMLIBS_FOUND STREQUAL "-1")
+    IF (LUA_LIB_FOUND STREQUAL "-1")
         FILE(GLOB DMLUA_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/${LuaVersion}/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/${LuaVersion}/*.cc
@@ -84,12 +88,16 @@ macro(LuaModuleImport LuaVersion ModuleName ModulePath DependLibs)
             ADD_EXECUTABLE(lua ${LUA_SOURCES})
             TARGET_LINK_LIBRARIES(lua ${LuaVersion} m dl)
         ENDIF ()
+
+        LIST(APPEND LUA_LIB ${LuaVersion})
+        SET_PROPERTY(GLOBAL PROPERTY LUA_LIB ${LUA_LIB})
     ENDIF()
 
+    LIST(APPEND LUA_MODULES ${ModuleName})
+    SET_PROPERTY(GLOBAL PROPERTY LUA_MODULES ${LUA_MODULES})
 
-    LIST(APPEND DMLIBS ${ModuleName})
-    SET_PROPERTY(GLOBAL PROPERTY DMLIBS ${DMLIBS})
-    MESSAGE(STATUS "LIST APPEND ${ModuleName} ${DMLIBS}" )
+
+    MESSAGE(STATUS "LIST APPEND ${ModuleName} ${LUA_MODULES}" )
 
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
