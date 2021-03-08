@@ -1,0 +1,77 @@
+{
+    "decode": "function",
+    "table2xml": "function",
+    "encode": "function",
+    "new": "function",
+    "table2json": "function",
+    "serializeToString": "function",
+    "json2xml": "function",
+    "getmodulepath": "function",
+    "json2table": "function",
+    "parseFromString": "function",
+    "xml2json": "function",
+    "msgconvert_comm2starve": "function",
+    "msgconvert_starve2comm": "function",
+    "tostring": "function",
+    "yaml2table": "function",
+    "table2yaml": "function",
+    "name2id": "function",
+    "msgconvert2_starve2comm": "function",
+    "msgconvert2_comm2starve": "function",
+    "id2name": "function",
+    "xml2table": "function",
+    "import": "function"
+}
+
+
+{
+    "global": {
+        "type": "table",
+        "fields": {
+            "role": {
+                "link": "role",
+                "description": "role.",
+                "type": "table",
+                "fields": {
+                    "GetName": {
+                        "link": "GetName",
+                        "description": "Returns a string.",
+                        "type": "function",
+                        "returnTypes": [
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "GetObjID": {
+                        "link": "GetObjID",
+                        "description": "Returns a number.",
+                        "type": "function",
+                        "returnTypes": [
+                            {
+                                "type": "number"
+                            }
+                        ]
+                    },
+                    "AcceptTask": {
+                        "link": "AcceptTask",
+                        "description": "Returns a bool.",
+                        "type": "function",
+                        "args": [
+                            {
+                                "name": "taskid",
+                                "type": "number",
+                                "displayName": "taskid?: number"
+                            }
+                        ],
+                        "returnTypes": [
+                            {
+                                "type": "bool"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,1 +1,0 @@
-protoc --cpp_out=. comm.proto
