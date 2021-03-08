@@ -29,7 +29,6 @@ option(MULTIPLE_THREADS "Support multi-threaded apps with internal fpconv - reco
 
 IF(MSVC)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-    #ADD_DEFINITIONS(-Dsnprintf=_snprintf)
     ADD_DEFINITIONS(-Dstrncasecmp=_strnicmp)
 ENDIF()
 
