@@ -25,5 +25,5 @@ MESSAGE(STATUS "VERSION: ${LUAPB_VERSION}")
 ADD_DEFINITIONS(-DUSE_LUAPB)
 ADD_DEFINITIONS(-DLUA_COMPAT_MODULE -DLUA_COMPAT_APIINTCASTS)
 
-LuaModuleImport("${LUA_MODULE}" "luapb" "src/luapb" "tolua;dmyaml;protobuf::libprotobuf-lite;protobuf::libprotoc")
+LuaModuleImport("${LUA_MODULE}" "luapb" "src/luapb" "tolua;dmyaml;protobuf::libprotobuf;protobuf::libprotoc")
 
