@@ -13,7 +13,7 @@ ModuleImport("dmyaml" "thirdparty/dmyaml")
 
 LibImport("tolua" "src/tolua")
 
-SET(LUA_MODULE lua53)
+SET(LUA_MODULE lua54)
 SET(LUAPB_VERSION_MAJOR "1")
 SET(LUAPB_VERSION_MINOR "0")
 SET(LUAPB_VERSION_PATCH "1")

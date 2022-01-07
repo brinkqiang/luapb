@@ -55,14 +55,14 @@ using namespace pugi;
 
 typedef struct tagluamsg
 {
-    google::protobuf::Message *msg;
+    google::protobuf::Message* msg;
     bool isDelete; //是否要释放掉这个msg;
 } lua_pbmsg;
 
 typedef struct tagluarepeatedmsg
 {
-    google::protobuf::Message *msg;
-    google::protobuf::FieldDescriptor *field;
+    google::protobuf::Message* msg;
+    google::protobuf::FieldDescriptor* field;
 } lua_repeated_msg;
 
 #define PB_MESSAGE "pb"
@@ -70,12 +70,12 @@ typedef struct tagluarepeatedmsg
 
 #define PB_REPEATED_MESSAGE_META "pb_repeated_meta"
 
-static int push_message(lua_State *L,
-                        google::protobuf::Message *message,
-                        bool del)
+static int push_message(lua_State* L,
+    google::protobuf::Message* message,
+    bool del)
 {
-    lua_pbmsg *tmp =
-        static_cast<lua_pbmsg *>(lua_newuserdata(L, sizeof(lua_pbmsg)));
+    lua_pbmsg* tmp =
+        static_cast<lua_pbmsg*>(lua_newuserdata(L, sizeof(lua_pbmsg)));
 
     if (tmp == NULL)
     {
@@ -90,12 +90,12 @@ static int push_message(lua_State *L,
     return 1;
 }
 
-static int push_repeated_msg(lua_State *L,
-                             google::protobuf::Message *msg,
-                             google::protobuf::FieldDescriptor *field)
+static int push_repeated_msg(lua_State* L,
+    google::protobuf::Message* msg,
+    google::protobuf::FieldDescriptor* field)
 {
-    lua_repeated_msg *repeated =
-        static_cast<lua_repeated_msg *>(lua_newuserdata(L, sizeof(lua_repeated_msg)));
+    lua_repeated_msg* repeated =
+        static_cast<lua_repeated_msg*>(lua_newuserdata(L, sizeof(lua_repeated_msg)));
 
     if (!repeated)
     {
@@ -110,12 +110,12 @@ static int push_repeated_msg(lua_State *L,
     return 1;
 }
 
-static int pb_repeated_add(lua_State *L)
+static int pb_repeated_add(lua_State* L)
 {
-    lua_repeated_msg *repeated =
-        (lua_repeated_msg *)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
+    lua_repeated_msg* repeated =
+        (lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
-    google::protobuf::Message *message = repeated->msg;
+    google::protobuf::Message* message = repeated->msg;
 
     if (!message)
     {
@@ -123,15 +123,15 @@ static int pb_repeated_add(lua_State *L)
         return 0;
     }
 
-    FieldDescriptor *field = repeated->field;
-    const Reflection *reflection = message->GetReflection();
+    FieldDescriptor* field = repeated->field;
+    const Reflection* reflection = message->GetReflection();
     luaL_argcheck(L, field != NULL, 1, "pb_repeated_add, field is null");
 
     switch (field->type())
     {
     case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
     {
-        google::protobuf::Message *msg = reflection->AddMessage(message, field);
+        google::protobuf::Message* msg = reflection->AddMessage(message, field);
         return push_message(L, msg, false);
     }
     break;
@@ -181,7 +181,7 @@ static int pb_repeated_add(lua_State *L)
     case google::protobuf::FieldDescriptor::TYPE_STRING:
     {
         size_t strlen;
-        const char *str = luaL_checklstring(L, 2, &strlen);
+        const char* str = luaL_checklstring(L, 2, &strlen);
         reflection->AddString(message, field, str);
     }
     break;
@@ -189,7 +189,7 @@ static int pb_repeated_add(lua_State *L)
     case google::protobuf::FieldDescriptor::TYPE_BYTES:
     {
         size_t strlen;
-        const char *str = luaL_checklstring(L, 2, &strlen);
+        const char* str = luaL_checklstring(L, 2, &strlen);
         reflection->AddString(message, field, str);
     }
     break;
@@ -210,19 +210,19 @@ static int pb_repeated_add(lua_State *L)
 
     default:
         luaL_argerror(L, (2),
-                      "pb_repeated_add field name type for add  is not support!!");
+            "pb_repeated_add field name type for add  is not support!!");
         return 0;
     }
 
     return 1;
 }
 
-static int pb_repeated_len(lua_State *L)
+static int pb_repeated_len(lua_State* L)
 {
-    lua_repeated_msg *repeated =
-        (lua_repeated_msg *)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
+    lua_repeated_msg* repeated =
+        (lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
-    google::protobuf::Message *message = repeated->msg;
+    google::protobuf::Message* message = repeated->msg;
 
     if (!message)
     {
@@ -230,8 +230,8 @@ static int pb_repeated_len(lua_State *L)
         return 0;
     }
 
-    const Reflection *reflection = message->GetReflection();
-    FieldDescriptor *field = repeated->field;
+    const Reflection* reflection = message->GetReflection();
+    FieldDescriptor* field = repeated->field;
     luaL_argcheck(L, field != NULL, 1, "pb_repeated_len field not exist");
 
     int fieldsize = reflection->FieldSize(*message, field);
@@ -239,12 +239,12 @@ static int pb_repeated_len(lua_State *L)
     return 1;
 }
 
-static int pb_repeated_get(lua_State *L)
+static int pb_repeated_get(lua_State* L)
 {
-    lua_repeated_msg *repeated =
-        (lua_repeated_msg *)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
+    lua_repeated_msg* repeated =
+        (lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
-    google::protobuf::Message *message = repeated->msg;
+    google::protobuf::Message* message = repeated->msg;
 
     if (!message)
     {
@@ -252,8 +252,8 @@ static int pb_repeated_get(lua_State *L)
         return 0;
     }
 
-    google::protobuf::FieldDescriptor *field = repeated->field;
-    const google::protobuf::Reflection *reflection = message->GetReflection();
+    google::protobuf::FieldDescriptor* field = repeated->field;
+    const google::protobuf::Reflection* reflection = message->GetReflection();
     luaL_argcheck(L, field != NULL, 1, "pb_repeated_get field not exist");
 
     int index = static_cast<int>(luaL_checkinteger(L, 2)) - 1;
@@ -263,7 +263,7 @@ static int pb_repeated_get(lua_State *L)
     {
     case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
     {
-        google::protobuf::Message *msg = reflection->MutableRepeatedMessage(message, field, index);
+        google::protobuf::Message* msg = reflection->MutableRepeatedMessage(message, field, index);
         return push_message(L, msg, false);
     }
     break;
@@ -337,12 +337,12 @@ static int pb_repeated_get(lua_State *L)
     return 1;
 }
 
-static int pb_repeated_set(lua_State *L)
+static int pb_repeated_set(lua_State* L)
 {
-    lua_repeated_msg *repeated =
-        (lua_repeated_msg *)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
+    lua_repeated_msg* repeated =
+        (lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
-    google::protobuf::Message *message = repeated->msg;
+    google::protobuf::Message* message = repeated->msg;
 
     if (!message)
     {
@@ -350,8 +350,8 @@ static int pb_repeated_set(lua_State *L)
         return 0;
     }
 
-    const google::protobuf::Reflection *reflection = message->GetReflection();
-    google::protobuf::FieldDescriptor *field = repeated->field;
+    const google::protobuf::Reflection* reflection = message->GetReflection();
+    google::protobuf::FieldDescriptor* field = repeated->field;
     luaL_argcheck(L, field != NULL, 1, "pb_repeated_set field not exist");
 
     int index = static_cast<int>(luaL_checkinteger(L, 2)) - 1;
@@ -411,7 +411,7 @@ static int pb_repeated_set(lua_State *L)
     case google::protobuf::FieldDescriptor::TYPE_STRING:
     {
         size_t strlen;
-        const char *str = static_cast<const char *>(luaL_checklstring(L, 3, &strlen));
+        const char* str = static_cast<const char*>(luaL_checklstring(L, 3, &strlen));
         reflection->SetRepeatedString(message, field, index, str);
     }
     break;
@@ -419,7 +419,7 @@ static int pb_repeated_set(lua_State *L)
     case google::protobuf::FieldDescriptor::TYPE_BYTES:
     {
         size_t strlen;
-        const char *str = static_cast<const char *>(luaL_checklstring(L, 3, &strlen));
+        const char* str = static_cast<const char*>(luaL_checklstring(L, 3, &strlen));
         reflection->SetRepeatedString(message, field, index, str);
     }
     break;
@@ -447,20 +447,20 @@ static int pb_repeated_set(lua_State *L)
 }
 
 ///////////////////////////////////////////////////////////
-static int pb_import(lua_State *L)
+static int pb_import(lua_State* L)
 {
     fprintf(stdout, "pb_import enter\n");
-    const char *filename = luaL_checkstring(L, 1);
+    const char* filename = luaL_checkstring(L, 1);
 
     ProtoImporterMgr::Instance()->Import(filename);
     fprintf(stdout, "pb_import leave\n");
     return 0;
 }
 
-static int pb_new(lua_State *L)
+static int pb_new(lua_State* L)
 {
-    const char *type_name = luaL_checkstring(L, 1);
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(type_name);
+    const char* type_name = luaL_checkstring(L, 1);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(type_name);
 
     if (!message)
     {
@@ -471,13 +471,13 @@ static int pb_new(lua_State *L)
     return push_message(L, message, true);
 }
 
-static int pb_delete(lua_State *L)
+static int pb_delete(lua_State* L)
 {
-    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, 1, PB_MESSAGE_META);
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
 
     if (luamsg->isDelete && luamsg->msg)
     {
-        google::protobuf::Message *message = luamsg->msg;
+        google::protobuf::Message* message = luamsg->msg;
         delete message;
         luamsg->msg = NULL;
     }
@@ -485,10 +485,10 @@ static int pb_delete(lua_State *L)
     return 0;
 }
 
-static int pb_tostring(lua_State *L)
+static int pb_tostring(lua_State* L)
 {
-    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, 1, PB_MESSAGE_META);
-    google::protobuf::Message *message = luamsg->msg;
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
+    google::protobuf::Message* message = luamsg->msg;
 
     if (!message)
     {
@@ -501,12 +501,12 @@ static int pb_tostring(lua_State *L)
     return 1;
 }
 
-static int pb_get(lua_State *L)
+static int pb_get(lua_State* L)
 {
-    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, 1, PB_MESSAGE_META);
-    const char *field_name = luaL_checkstring(L, 2);
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
+    const char* field_name = luaL_checkstring(L, 2);
 
-    google::protobuf::Message *message = luamsg->msg;
+    google::protobuf::Message* message = luamsg->msg;
 
     if (!message)
     {
@@ -514,21 +514,21 @@ static int pb_get(lua_State *L)
         return 0;
     }
 
-    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
-    const google::protobuf::Reflection *reflection = message->GetReflection();
-    const google::protobuf::FieldDescriptor *field = descriptor->FindFieldByName(field_name);
+    const google::protobuf::Descriptor* descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection* reflection = message->GetReflection();
+    const google::protobuf::FieldDescriptor* field = descriptor->FindFieldByName(field_name);
     luaL_argcheck(L, (field != NULL), 2, "pb_get, field_name error");
 
     if (field->is_repeated())
     {
-        return push_repeated_msg(L, message, const_cast<FieldDescriptor *>(field));
+        return push_repeated_msg(L, message, const_cast<FieldDescriptor*>(field));
     }
 
     switch (field->type())
     {
     case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
     {
-        google::protobuf::Message *msg = reflection->MutableMessage(message, field);
+        google::protobuf::Message* msg = reflection->MutableMessage(message, field);
         return push_message(L, msg, false);
     }
     break;
@@ -597,19 +597,19 @@ static int pb_get(lua_State *L)
 
     default:
         luaL_argerror(L, (2),
-                      "pb_repeated_add field name type for add  is not support!!");
+            "pb_repeated_add field name type for add  is not support!!");
         return 0;
     }
 
     return 1;
 }
 
-static int pb_set(lua_State *L)
+static int pb_set(lua_State* L)
 {
-    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, 1, PB_MESSAGE_META);
-    const char *field_name = luaL_checkstring(L, 2);
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
+    const char* field_name = luaL_checkstring(L, 2);
 
-    google::protobuf::Message *message = luamsg->msg;
+    google::protobuf::Message* message = luamsg->msg;
 
     if (!message)
     {
@@ -617,9 +617,9 @@ static int pb_set(lua_State *L)
         return 0;
     }
 
-    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
-    const google::protobuf::Reflection *reflection = message->GetReflection();
-    const google::protobuf::FieldDescriptor *field = descriptor->FindFieldByName(field_name);
+    const google::protobuf::Descriptor* descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection* reflection = message->GetReflection();
+    const google::protobuf::FieldDescriptor* field = descriptor->FindFieldByName(field_name);
 
     luaL_argcheck(L, field != NULL, 2, "LuaPB::set field_name error");
     luaL_argcheck(L, !field->is_repeated(), 2, "LuaPB::set field_name is repeated");
@@ -678,7 +678,7 @@ static int pb_set(lua_State *L)
     case google::protobuf::FieldDescriptor::TYPE_STRING:
     {
         size_t strlen;
-        const char *str = luaL_checklstring(L, 3, &strlen);
+        const char* str = luaL_checklstring(L, 3, &strlen);
         reflection->SetString(message, field, str);
     }
     break;
@@ -686,7 +686,7 @@ static int pb_set(lua_State *L)
     case google::protobuf::FieldDescriptor::TYPE_BYTES:
     {
         size_t strlen;
-        const char *str = luaL_checklstring(L, 3, &strlen);
+        const char* str = luaL_checklstring(L, 3, &strlen);
         reflection->SetString(message, field, str);
     }
     break;
@@ -713,23 +713,23 @@ static int pb_set(lua_State *L)
     return 1;
 }
 
-static int pb_parseFromString(lua_State *L)
+static int pb_parseFromString(lua_State* L)
 {
-    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, 1, PB_MESSAGE_META);
-    google::protobuf::Message *message = luamsg->msg;
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
+    google::protobuf::Message* message = luamsg->msg;
 
     luaL_checktype(L, 2, LUA_TSTRING);
 
     size_t bin_len;
-    const char *bin = static_cast<const char *>(luaL_checklstring(L, 2, &bin_len));
+    const char* bin = static_cast<const char*>(luaL_checklstring(L, 2, &bin_len));
     message->ParseFromArray(bin, (int)bin_len);
     return 0;
 }
 
-static int pb_serializeToString(lua_State *L)
+static int pb_serializeToString(lua_State* L)
 {
-    lua_pbmsg *luamsg = (lua_pbmsg *)luaL_checkudata(L, 1, PB_MESSAGE_META);
-    google::protobuf::Message *message = luamsg->msg;
+    lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
+    google::protobuf::Message* message = luamsg->msg;
 
     std::string msg;
     message->SerializeToString(&msg);
@@ -782,15 +782,15 @@ static int pb_serializeToString(lua_State *L)
     }
 
 // have to set the message table at top of lua_state* L
-static void ParseMessage(lua_State *L, Message *msg)
+static void ParseMessage(lua_State* L, Message* msg)
 {
 
-    const Descriptor *descriptor = msg->GetDescriptor();
-    const Reflection *reflection = msg->GetReflection();
+    const Descriptor* descriptor = msg->GetDescriptor();
+    const Reflection* reflection = msg->GetReflection();
     for (int i = 0; i < descriptor->field_count(); i++)
     {
-        const FieldDescriptor *field = descriptor->field(i);
-        const std::string &name = field->name();
+        const FieldDescriptor* field = descriptor->field(i);
+        const std::string& name = field->name();
 
         lua_getfield(L, -1, name.c_str());
 
@@ -809,7 +809,7 @@ static void ParseMessage(lua_State *L, Message *msg)
                 while (lua_next(L, -2) != 0)
                 {
                     SWITCH_FIELD_TYPE(Add, field, submsg)
-                    lua_pop(L, 1);
+                        lua_pop(L, 1);
                 }
             }
             else
@@ -858,16 +858,16 @@ static void ParseMessage(lua_State *L, Message *msg)
         break;                                                                                      \
     }
 
-static void WriteMessage(lua_State *L, const Message *pmsg)
+static void WriteMessage(lua_State* L, const Message* pmsg)
 {
-    const Descriptor *descriptor = pmsg->GetDescriptor();
-    const Reflection *reflection = pmsg->GetReflection();
+    const Descriptor* descriptor = pmsg->GetDescriptor();
+    const Reflection* reflection = pmsg->GetReflection();
 
     lua_createtable(L, 0, descriptor->field_count());
     for (int i = 0; i < descriptor->field_count(); i++)
     {
-        const FieldDescriptor *field = descriptor->field(i);
-        const std::string &name = field->name();
+        const FieldDescriptor* field = descriptor->field(i);
+        const std::string& name = field->name();
 
         lua_pushstring(L, name.c_str());
 
@@ -879,7 +879,7 @@ static void WriteMessage(lua_State *L, const Message *pmsg)
             {
                 lua_pushinteger(L, j + 1);
                 SWITCH_FIELD_TYPE(GetRepeated, j)
-                lua_settable(L, -3);
+                    lua_settable(L, -3);
             }
             if (reflection->FieldSize((*pmsg), field) == 0)
             {
@@ -891,9 +891,9 @@ static void WriteMessage(lua_State *L, const Message *pmsg)
         {
             //if (reflection->HasField((*pmsg), field)) {
             SWITCH_FIELD_TYPE(Get)
-            //} else {
-            //	flag = false;
-            //}
+                //} else {
+                //	flag = false;
+                //}
         }
         if (flag)
         {
@@ -912,10 +912,10 @@ static void WriteMessage(lua_State *L, const Message *pmsg)
 /*****************************************************************************************/
 /*  lua interface for encoding a lua table message into a binary protobuf string buffer  */
 /*****************************************************************************************/
-static int encode(lua_State *L)
+static int encode(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "encode CreateMessage failed!!");
@@ -938,17 +938,17 @@ static int encode(lua_State *L)
 /*****************************************************************************************/
 /*  lua interface for decoding a binary protobuf string buffer into a lua table message  */
 /*****************************************************************************************/
-static int decode(lua_State *L)
+static int decode(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "decode CreateMessage failed!!");
         return 0;
     }
     size_t len;
-    const char *s = lua_tolstring(L, -1, &len);
+    const char* s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
     if (!message->ParseFromString(buffer))
     {
@@ -961,10 +961,10 @@ static int decode(lua_State *L)
     return 1;
 }
 
-static int table2json(lua_State *L)
+static int table2json(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "table2json CreateMessage failed !!");
@@ -981,17 +981,17 @@ static int table2json(lua_State *L)
     return 1;
 }
 
-static int json2table(lua_State *L)
+static int json2table(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "json2table CreateMessage failed !!");
         return 0;
     }
     size_t len;
-    const char *s = lua_tolstring(L, -1, &len);
+    const char* s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
 
     google::protobuf::util::JsonStringToMessage(buffer, message);
@@ -1000,10 +1000,10 @@ static int json2table(lua_State *L)
     return 1;
 }
 
-static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Message *message, const char* name)
+static void WriteXml(lua_State* L, pugi::xml_node& doc, google::protobuf::Message* message, const char* name)
 {
-    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
-    const google::protobuf::Reflection *reflection = message->GetReflection();
+    const google::protobuf::Descriptor* descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection* reflection = message->GetReflection();
     pugi::xml_node msg;
     if (name)
     {
@@ -1017,7 +1017,7 @@ static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Messag
 
     for (int i = 0; i < descriptor->field_count(); i++)
     {
-        const google::protobuf::FieldDescriptor *field = descriptor->field(i);
+        const google::protobuf::FieldDescriptor* field = descriptor->field(i);
         int index = i;
 
         bool flag = true;
@@ -1034,7 +1034,7 @@ static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Messag
                 {
                 case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
                 {
-                    google::protobuf::Message *_msg = reflection->MutableRepeatedMessage(message, field, j);
+                    google::protobuf::Message* _msg = reflection->MutableRepeatedMessage(message, field, j);
                     WriteXml(L, msg, _msg, field->name().c_str());
                 }
                 break;
@@ -1131,7 +1131,7 @@ static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Messag
             {
             case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
             {
-                google::protobuf::Message *_msg = reflection->MutableMessage(message, field);
+                google::protobuf::Message* _msg = reflection->MutableMessage(message, field);
                 WriteXml(L, msg, _msg, field->name().c_str());
             }
             break;
@@ -1208,16 +1208,16 @@ static void WriteXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Messag
 
             default:
                 luaL_argerror(L, 0, "writexml, field type for get not support!!!");
-                return ;
+                return;
             }
         }
     }
 }
 
-static void ReadXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Message *message, const char* name = NULL)
+static void ReadXml(lua_State* L, pugi::xml_node& doc, google::protobuf::Message* message, const char* name = NULL)
 {
-    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
-    const google::protobuf::Reflection *reflection = message->GetReflection();
+    const google::protobuf::Descriptor* descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection* reflection = message->GetReflection();
     pugi::xml_node msg;
     if (name)
     {
@@ -1231,8 +1231,8 @@ static void ReadXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Message
 
     for (int i = 0; i < descriptor->field_count(); i++)
     {
-        const google::protobuf::FieldDescriptor *field = descriptor->field(i);
-        
+        const google::protobuf::FieldDescriptor* field = descriptor->field(i);
+
         int index = i;
 
         bool flag = true;
@@ -1253,7 +1253,7 @@ static void ReadXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Message
                 case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
                 {
                     pugi::xml_node xml_field = *It;
-                    google::protobuf::Message *_msg = reflection->AddMessage(message, field);
+                    google::protobuf::Message* _msg = reflection->AddMessage(message, field);
                     ReadXml(L, xml_field, _msg, field->name().c_str());
                 }
                 break;
@@ -1347,7 +1347,7 @@ static void ReadXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Message
             {
             case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
             {
-                google::protobuf::Message *_msg = reflection->AddMessage(message, field);
+                google::protobuf::Message* _msg = reflection->AddMessage(message, field);
                 ReadXml(L, msg, _msg);
             }
             break;
@@ -1432,10 +1432,10 @@ static void ReadXml(lua_State *L, pugi::xml_node& doc, google::protobuf::Message
     }
 }
 
-static int table2xml(lua_State *L)
+static int table2xml(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "table2xml CreateMessage failed !!");
@@ -1456,17 +1456,17 @@ static int table2xml(lua_State *L)
     return 1;
 }
 
-static int xml2table(lua_State *L)
+static int xml2table(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "xml2table CreateMessage failed !!");
         return 0;
     }
     size_t len;
-    const char *s = lua_tolstring(L, -1, &len);
+    const char* s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
 
     pugi::xml_document doc;
@@ -1479,10 +1479,10 @@ static int xml2table(lua_State *L)
     return 1;
 }
 
-static void WriteYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *message, const char* name)
+static void WriteYaml(lua_State* L, YAML::Node& doc, google::protobuf::Message* message, const char* name)
 {
-    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
-    const google::protobuf::Reflection *reflection = message->GetReflection();
+    const google::protobuf::Descriptor* descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection* reflection = message->GetReflection();
     YAML::Node msg;
     if (name)
     {
@@ -1496,7 +1496,7 @@ static void WriteYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *
 
     for (int i = 0; i < descriptor->field_count(); i++)
     {
-        const google::protobuf::FieldDescriptor *field = descriptor->field(i);
+        const google::protobuf::FieldDescriptor* field = descriptor->field(i);
         int index = i;
 
         bool flag = true;
@@ -1513,7 +1513,7 @@ static void WriteYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *
                 {
                 case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
                 {
-                    google::protobuf::Message *_msg = reflection->MutableRepeatedMessage(message, field, j);
+                    google::protobuf::Message* _msg = reflection->MutableRepeatedMessage(message, field, j);
                     WriteYaml(L, msg, _msg, field->name().c_str());
                 }
                 break;
@@ -1610,7 +1610,7 @@ static void WriteYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *
             {
             case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
             {
-                google::protobuf::Message *_msg = reflection->MutableMessage(message, field);
+                google::protobuf::Message* _msg = reflection->MutableMessage(message, field);
                 WriteYaml(L, msg, _msg, field->name().c_str());
             }
             break;
@@ -1693,10 +1693,10 @@ static void WriteYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *
     }
 }
 
-static void ReadYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *message, const char* name = NULL)
+static void ReadYaml(lua_State* L, YAML::Node& doc, google::protobuf::Message* message, const char* name = NULL)
 {
-    const google::protobuf::Descriptor *descriptor = message->GetDescriptor();
-    const google::protobuf::Reflection *reflection = message->GetReflection();
+    const google::protobuf::Descriptor* descriptor = message->GetDescriptor();
+    const google::protobuf::Reflection* reflection = message->GetReflection();
     YAML::Node msg;
     if (name)
     {
@@ -1710,7 +1710,7 @@ static void ReadYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *m
 
     for (int i = 0; i < descriptor->field_count(); i++)
     {
-        const google::protobuf::FieldDescriptor *field = descriptor->field(i);
+        const google::protobuf::FieldDescriptor* field = descriptor->field(i);
 
         int index = i;
 
@@ -1732,7 +1732,7 @@ static void ReadYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *m
                 case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
                 {
                     YAML::Node xml_field = *It;
-                    google::protobuf::Message *_msg = reflection->AddMessage(message, field);
+                    google::protobuf::Message* _msg = reflection->AddMessage(message, field);
                     ReadYaml(L, xml_field, _msg, field->name().c_str());
                 }
                 break;
@@ -1824,7 +1824,7 @@ static void ReadYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *m
             {
             case google::protobuf::FieldDescriptor::TYPE_MESSAGE:
             {
-                google::protobuf::Message *_msg = reflection->AddMessage(message, field);
+                google::protobuf::Message* _msg = reflection->AddMessage(message, field);
                 ReadYaml(L, msg, _msg);
             }
             break;
@@ -1906,10 +1906,10 @@ static void ReadYaml(lua_State *L, YAML::Node& doc, google::protobuf::Message *m
     }
 }
 
-static int table2yaml(lua_State *L)
+static int table2yaml(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "table2yaml CreateMessage failed !!");
@@ -1932,17 +1932,17 @@ static int table2yaml(lua_State *L)
     return 1;
 }
 
-static int yaml2table(lua_State *L)
+static int yaml2table(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "yaml2table CreateMessage failed !!");
         return 0;
     }
     size_t len;
-    const char *s = lua_tolstring(L, -1, &len);
+    const char* s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
 
     YAML::Node doc = YAML::Load(buffer.c_str());
@@ -1953,17 +1953,17 @@ static int yaml2table(lua_State *L)
     return 1;
 }
 
-static int xml2json(lua_State *L)
+static int xml2json(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "xml2json CreateMessage failed !!");
         return 0;
     }
     size_t len;
-    const char *s = lua_tolstring(L, -1, &len);
+    const char* s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
 
     pugi::xml_document doc;
@@ -1980,24 +1980,24 @@ static int xml2json(lua_State *L)
     return 1;
 }
 
-static int json2xml(lua_State *L)
+static int json2xml(lua_State* L)
 {
     const std::string name(lua_tostring(L, -2));
-    google::protobuf::Message *message = ProtoImporterMgr::Instance()->CreateMessage(name);
+    google::protobuf::Message* message = ProtoImporterMgr::Instance()->CreateMessage(name);
     if (NULL == message)
     {
         luaL_argerror(L, (2), "json2xml CreateMessage failed !!");
         return 0;
     }
     size_t len;
-    const char *s = lua_tolstring(L, -1, &len);
+    const char* s = lua_tolstring(L, -1, &len);
     std::string buffer(s, len);
     google::protobuf::util::JsonStringToMessage(buffer, message);
     ProtoImporterMgr::Instance()->ReleaseMessage(message);
     return 1;
 }
 
-static int id2name(lua_State *L)
+static int id2name(lua_State* L)
 {
     int msgID(lua_tointeger(L, -1));
     std::string strName = ProtoImporterMgr::Instance()->ID2Name(msgID);
@@ -2006,7 +2006,7 @@ static int id2name(lua_State *L)
     return 1;
 }
 
-static int name2id(lua_State *L)
+static int name2id(lua_State* L)
 {
     const std::string name(lua_tostring(L, -1));
     int msgID = ProtoImporterMgr::Instance()->Name2ID(name);
@@ -2014,7 +2014,7 @@ static int name2id(lua_State *L)
     return 1;
 }
 
-static int getmodulepath(lua_State *L)
+static int getmodulepath(lua_State* L)
 {
     std::string strPath = DMGetModulePath();
     lua_pushlstring(L, strPath.c_str(), strPath.length());
@@ -2046,7 +2046,7 @@ static const struct luaL_Reg libm[] = {
     {"__index", pb_get},
     {"__newindex", pb_set},
     {"__gc", pb_delete},
-    {NULL, NULL}};
+    {NULL, NULL} };
 
 static const struct luaL_Reg repeatedlib[] = {
     {"add", pb_repeated_add},
@@ -2056,7 +2056,7 @@ static const struct luaL_Reg repeatedlib[] = {
     {NULL, NULL},
 };
 
-LUAMOD_API int luaopen_luapb(lua_State *L)
+LUAMOD_API int luaopen_luapb(lua_State* L)
 {
     luaL_newmetatable(L, PB_REPEATED_MESSAGE_META);
     luaL_register(L, NULL, repeatedlib);
@@ -2076,7 +2076,7 @@ LUAMOD_API int luaopen_luapb(lua_State *L)
     return 1;
 }
 
-LUAMOD_API int require_luapb(lua_State *L)
+LUAMOD_API int require_luapb(lua_State* L)
 {
     luaL_requiref(L, "luapb", luaopen_luapb, 0);
     printf("lua module: require luapb\n");
