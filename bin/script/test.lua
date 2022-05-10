@@ -87,7 +87,7 @@ function pb_cpp_test()
     local msg = pb.new("net.tb_Person")
     msg.number = "13615632545"
     msg.email = "13615632545@163.com"
-    msg.age = 28
+    msg.age = 12345678987654321
     msg.ptype = 2
     msg.desc:add("first")
     msg.desc:add("second")
@@ -108,10 +108,11 @@ function pb_cpp_test()
     job2.jobdesc = "coder2"
 
     local buffer = pb.serializeToString(msg)
+    print("pb_cpp_test pass #v1\n" ..  pb.tostring(msg))
     local msg2 = pb.new("net.tb_Person")
     pb.parseFromString(msg2, buffer)
 
-    print("pb_cpp_test pass #\n" ..  pb.tostring(msg2))
+    print("pb_cpp_test pass #v2\n" ..  pb.tostring(msg2))
 end
 
 function pb_table_test() 
@@ -181,7 +182,7 @@ function pb_cpp_test_million()
         local msg = pb.new("net.tb_Person")
         msg.number = "13615632545"
         msg.email = "13615632545@163.com"
-        msg.age = 28
+        msg.age = 12345678987654321
         msg.ptype = 2
         msg.desc:add("first")
         msg.desc:add("second")
@@ -228,9 +229,9 @@ function pb_table_test_million()
     print("pb_table_test_million pass")
 end
 
-pb_table_yaml()
+--pb_table_yaml()
 pb_cpp_test()
-pb_table_test()
+--pb_table_test()
 
 --pb_cpp_test_million()
 --pb_table_test_million()
