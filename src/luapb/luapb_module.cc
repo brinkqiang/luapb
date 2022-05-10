@@ -649,14 +649,14 @@ static int pb_set(lua_State* L)
 
     case google::protobuf::FieldDescriptor::TYPE_INT64:
     {
-        int64_t val = static_cast<int64_t>(luaL_checknumber(L, 3));
+        int64_t val = static_cast<int64_t>(luaL_checkinteger(L, 3));
         reflection->SetInt64(message, field, val);
     }
     break;
 
     case google::protobuf::FieldDescriptor::TYPE_UINT64:
     {
-        uint64_t val = static_cast<uint64_t>(luaL_checknumber(L, 3));
+        uint64_t val = static_cast<uint64_t>(luaL_checkinteger(L, 3));
         reflection->SetUInt64(message, field, val);
     }
     break;
