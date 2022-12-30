@@ -974,7 +974,13 @@ static int table2json(lua_State* L)
     ParseMessage(L, message);
 
     std::string strJson;
-    google::protobuf::util::MessageToJsonString(*message, &strJson);
+
+    google::protobuf::util::JsonPrintOptions options;
+    options.add_whitespace = true;
+    options.always_print_primitive_fields = true;
+    options.preserve_proto_field_names = true;
+
+    google::protobuf::util::MessageToJsonString(*message, &strJson, options);
     lua_pushlstring(L, strJson.c_str(), strJson.length());
 
     ProtoImporterMgr::Instance()->ReleaseMessage(message);
@@ -1973,7 +1979,13 @@ static int xml2json(lua_State* L)
     WriteMessage(L, message);
 
     std::string strJson;
-    google::protobuf::util::MessageToJsonString(*message, &strJson);
+
+    google::protobuf::util::JsonPrintOptions options;
+    options.add_whitespace = true;
+    options.always_print_primitive_fields = true;
+    options.preserve_proto_field_names = true;
+
+    google::protobuf::util::MessageToJsonString(*message, &strJson, options);
     lua_pushlstring(L, strJson.c_str(), strJson.length());
 
     ProtoImporterMgr::Instance()->ReleaseMessage(message);
