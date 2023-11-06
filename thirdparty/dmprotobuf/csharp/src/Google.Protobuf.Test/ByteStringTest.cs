@@ -111,6 +111,18 @@ namespace Google.Protobuf
         }
 
         [Test]
+        public void CopyFromReadOnlySpanCopiesContents()
+        {
+            byte[] data = new byte[1];
+            data[0] = 10;
+            ReadOnlySpan<byte> byteSpan = data;
+            var bs = ByteString.CopyFrom(byteSpan);
+            Assert.AreEqual(10, bs[0]);
+            data[0] = 5;
+            Assert.AreEqual(10, bs[0]);
+        }
+
+        [Test]
         public void ToByteArrayCopiesContents()
         {
             ByteString bs = ByteString.CopyFromUtf8("Hello");
@@ -227,11 +239,27 @@ namespace Google.Protobuf
         {
             // We used to have an awful hash algorithm where only the last four
             // bytes were relevant. This is a regression test for
-            // https://github.com/google/protobuf/issues/2511
+            // https://github.com/protocolbuffers/protobuf/issues/2511
 
             ByteString b1 = ByteString.CopyFrom(100, 1, 2, 3, 4);
             ByteString b2 = ByteString.CopyFrom(200, 1, 2, 3, 4);
             Assert.AreNotEqual(b1.GetHashCode(), b2.GetHashCode());
+        }
+
+        [Test]
+        public void GetContentsAsReadOnlySpan()
+        {
+            var byteString = ByteString.CopyFrom(1, 2, 3, 4, 5);
+            var copied = byteString.Span.ToArray();
+            CollectionAssert.AreEqual(byteString, copied);
+        }
+
+        [Test]
+        public void GetContentsAsReadOnlyMemory()
+        {
+            var byteString = ByteString.CopyFrom(1, 2, 3, 4, 5);
+            var copied = byteString.Memory.ToArray();
+            CollectionAssert.AreEqual(byteString, copied);
         }
     }
 }

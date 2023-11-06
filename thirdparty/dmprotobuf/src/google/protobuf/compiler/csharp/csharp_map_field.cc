@@ -31,7 +31,6 @@
 #include <sstream>
 
 #include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/plugin.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/io/printer.h>
@@ -48,15 +47,15 @@ namespace compiler {
 namespace csharp {
 
 MapFieldGenerator::MapFieldGenerator(const FieldDescriptor* descriptor,
-                                     int fieldOrdinal,
+                                     int presenceIndex,
                                      const Options* options)
-    : FieldGeneratorBase(descriptor, fieldOrdinal, options) {
+    : FieldGeneratorBase(descriptor, presenceIndex, options) {
 }
 
 MapFieldGenerator::~MapFieldGenerator() {
 }
 
-void MapFieldGenerator::GenerateMembers(io::Printer* printer) {   
+void MapFieldGenerator::GenerateMembers(io::Printer* printer) {
   const FieldDescriptor* key_descriptor =
       descriptor_->message_type()->FindFieldByName("key");
   const FieldDescriptor* value_descriptor =
@@ -95,15 +94,27 @@ void MapFieldGenerator::GenerateMergingCode(io::Printer* printer) {
 }
 
 void MapFieldGenerator::GenerateParsingCode(io::Printer* printer) {
+  GenerateParsingCode(printer, true);
+}
+
+void MapFieldGenerator::GenerateParsingCode(io::Printer* printer, bool use_parse_context) {
   printer->Print(
     variables_,
-    "$name$_.AddEntriesFrom(input, _map_$name$_codec);\n");
+    use_parse_context
+    ? "$name$_.AddEntriesFrom(ref input, _map_$name$_codec);\n"
+    : "$name$_.AddEntriesFrom(input, _map_$name$_codec);\n");
 }
 
 void MapFieldGenerator::GenerateSerializationCode(io::Printer* printer) {
+  GenerateSerializationCode(printer, true);
+}
+
+void MapFieldGenerator::GenerateSerializationCode(io::Printer* printer, bool use_write_context) {
   printer->Print(
     variables_,
-    "$name$_.WriteTo(output, _map_$name$_codec);\n");
+    use_write_context
+    ? "$name$_.WriteTo(ref output, _map_$name$_codec);\n"
+    : "$name$_.WriteTo(output, _map_$name$_codec);\n");
 }
 
 void MapFieldGenerator::GenerateSerializedSizeCode(io::Printer* printer) {

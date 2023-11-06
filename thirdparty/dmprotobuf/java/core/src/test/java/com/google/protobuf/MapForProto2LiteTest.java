@@ -43,9 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 import junit.framework.TestCase;
 
-/**
- * Unit tests for map fields.
- */
+/** Unit tests for map fields. */
 public final class MapForProto2LiteTest extends TestCase {
 
   private void setMapValues(TestMap.Builder builder) {
@@ -53,23 +51,18 @@ public final class MapForProto2LiteTest extends TestCase {
         .putInt32ToInt32Field(1, 11)
         .putInt32ToInt32Field(2, 22)
         .putInt32ToInt32Field(3, 33)
-
         .putInt32ToStringField(1, "11")
         .putInt32ToStringField(2, "22")
         .putInt32ToStringField(3, "33")
-
         .putInt32ToBytesField(1, TestUtil.toBytes("11"))
         .putInt32ToBytesField(2, TestUtil.toBytes("22"))
         .putInt32ToBytesField(3, TestUtil.toBytes("33"))
-
         .putInt32ToEnumField(1, TestMap.EnumValue.FOO)
         .putInt32ToEnumField(2, TestMap.EnumValue.BAR)
         .putInt32ToEnumField(3, TestMap.EnumValue.BAZ)
-
         .putInt32ToMessageField(1, MessageValue.newBuilder().setValue(11).build())
         .putInt32ToMessageField(2, MessageValue.newBuilder().setValue(22).build())
         .putInt32ToMessageField(3, MessageValue.newBuilder().setValue(33).build())
-
         .putStringToInt32Field("1", 11)
         .putStringToInt32Field("2", 22)
         .putStringToInt32Field("3", 33);
@@ -84,44 +77,44 @@ public final class MapForProto2LiteTest extends TestCase {
 
   private void copyMapValues(TestMap source, TestMap.Builder destination) {
     destination
-        .putAllInt32ToInt32Field(source.getInt32ToInt32Field())
-        .putAllInt32ToStringField(source.getInt32ToStringField())
-        .putAllInt32ToBytesField(source.getInt32ToBytesField())
-        .putAllInt32ToEnumField(source.getInt32ToEnumField())
-        .putAllInt32ToMessageField(source.getInt32ToMessageField())
-        .putAllStringToInt32Field(source.getStringToInt32Field());
+        .putAllInt32ToInt32Field(source.getInt32ToInt32FieldMap())
+        .putAllInt32ToStringField(source.getInt32ToStringFieldMap())
+        .putAllInt32ToBytesField(source.getInt32ToBytesFieldMap())
+        .putAllInt32ToEnumField(source.getInt32ToEnumFieldMap())
+        .putAllInt32ToMessageField(source.getInt32ToMessageFieldMap())
+        .putAllStringToInt32Field(source.getStringToInt32FieldMap());
   }
 
   private void assertMapValuesSet(TestMap message) {
-    assertEquals(3, message.getInt32ToInt32Field().size());
-    assertEquals(11, message.getInt32ToInt32Field().get(1).intValue());
-    assertEquals(22, message.getInt32ToInt32Field().get(2).intValue());
-    assertEquals(33, message.getInt32ToInt32Field().get(3).intValue());
+    assertEquals(3, message.getInt32ToInt32FieldMap().size());
+    assertEquals(11, message.getInt32ToInt32FieldMap().get(1).intValue());
+    assertEquals(22, message.getInt32ToInt32FieldMap().get(2).intValue());
+    assertEquals(33, message.getInt32ToInt32FieldMap().get(3).intValue());
 
-    assertEquals(3, message.getInt32ToStringField().size());
-    assertEquals("11", message.getInt32ToStringField().get(1));
-    assertEquals("22", message.getInt32ToStringField().get(2));
-    assertEquals("33", message.getInt32ToStringField().get(3));
+    assertEquals(3, message.getInt32ToStringFieldMap().size());
+    assertEquals("11", message.getInt32ToStringFieldMap().get(1));
+    assertEquals("22", message.getInt32ToStringFieldMap().get(2));
+    assertEquals("33", message.getInt32ToStringFieldMap().get(3));
 
-    assertEquals(3, message.getInt32ToBytesField().size());
-    assertEquals(TestUtil.toBytes("11"), message.getInt32ToBytesField().get(1));
-    assertEquals(TestUtil.toBytes("22"), message.getInt32ToBytesField().get(2));
-    assertEquals(TestUtil.toBytes("33"), message.getInt32ToBytesField().get(3));
+    assertEquals(3, message.getInt32ToBytesFieldMap().size());
+    assertEquals(TestUtil.toBytes("11"), message.getInt32ToBytesFieldMap().get(1));
+    assertEquals(TestUtil.toBytes("22"), message.getInt32ToBytesFieldMap().get(2));
+    assertEquals(TestUtil.toBytes("33"), message.getInt32ToBytesFieldMap().get(3));
 
-    assertEquals(3, message.getInt32ToEnumField().size());
-    assertEquals(TestMap.EnumValue.FOO, message.getInt32ToEnumField().get(1));
-    assertEquals(TestMap.EnumValue.BAR, message.getInt32ToEnumField().get(2));
-    assertEquals(TestMap.EnumValue.BAZ, message.getInt32ToEnumField().get(3));
+    assertEquals(3, message.getInt32ToEnumFieldMap().size());
+    assertEquals(TestMap.EnumValue.FOO, message.getInt32ToEnumFieldMap().get(1));
+    assertEquals(TestMap.EnumValue.BAR, message.getInt32ToEnumFieldMap().get(2));
+    assertEquals(TestMap.EnumValue.BAZ, message.getInt32ToEnumFieldMap().get(3));
 
-    assertEquals(3, message.getInt32ToMessageField().size());
-    assertEquals(11, message.getInt32ToMessageField().get(1).getValue());
-    assertEquals(22, message.getInt32ToMessageField().get(2).getValue());
-    assertEquals(33, message.getInt32ToMessageField().get(3).getValue());
+    assertEquals(3, message.getInt32ToMessageFieldMap().size());
+    assertEquals(11, message.getInt32ToMessageFieldMap().get(1).getValue());
+    assertEquals(22, message.getInt32ToMessageFieldMap().get(2).getValue());
+    assertEquals(33, message.getInt32ToMessageFieldMap().get(3).getValue());
 
-    assertEquals(3, message.getStringToInt32Field().size());
-    assertEquals(11, message.getStringToInt32Field().get("1").intValue());
-    assertEquals(22, message.getStringToInt32Field().get("2").intValue());
-    assertEquals(33, message.getStringToInt32Field().get("3").intValue());
+    assertEquals(3, message.getStringToInt32FieldMap().size());
+    assertEquals(11, message.getStringToInt32FieldMap().get("1").intValue());
+    assertEquals(22, message.getStringToInt32FieldMap().get("2").intValue());
+    assertEquals(33, message.getStringToInt32FieldMap().get("3").intValue());
   }
 
   private void updateMapValues(TestMap.Builder builder) {
@@ -129,23 +122,18 @@ public final class MapForProto2LiteTest extends TestCase {
         .putInt32ToInt32Field(1, 111)
         .removeInt32ToInt32Field(2)
         .putInt32ToInt32Field(4, 44)
-
         .putInt32ToStringField(1, "111")
         .removeInt32ToStringField(2)
         .putInt32ToStringField(4, "44")
-
         .putInt32ToBytesField(1, TestUtil.toBytes("111"))
         .removeInt32ToBytesField(2)
         .putInt32ToBytesField(4, TestUtil.toBytes("44"))
-
         .putInt32ToEnumField(1, TestMap.EnumValue.BAR)
         .removeInt32ToEnumField(2)
         .putInt32ToEnumField(4, TestMap.EnumValue.QUX)
-
         .putInt32ToMessageField(1, MessageValue.newBuilder().setValue(111).build())
         .removeInt32ToMessageField(2)
         .putInt32ToMessageField(4, MessageValue.newBuilder().setValue(44).build())
-
         .putStringToInt32Field("1", 111)
         .removeStringToInt32Field("2")
         .putStringToInt32Field("4", 44);
@@ -164,35 +152,35 @@ public final class MapForProto2LiteTest extends TestCase {
   }
 
   private void assertMapValuesUpdated(TestMap message) {
-    assertEquals(3, message.getInt32ToInt32Field().size());
-    assertEquals(111, message.getInt32ToInt32Field().get(1).intValue());
-    assertEquals(33, message.getInt32ToInt32Field().get(3).intValue());
-    assertEquals(44, message.getInt32ToInt32Field().get(4).intValue());
+    assertEquals(3, message.getInt32ToInt32FieldMap().size());
+    assertEquals(111, message.getInt32ToInt32FieldMap().get(1).intValue());
+    assertEquals(33, message.getInt32ToInt32FieldMap().get(3).intValue());
+    assertEquals(44, message.getInt32ToInt32FieldMap().get(4).intValue());
 
-    assertEquals(3, message.getInt32ToStringField().size());
-    assertEquals("111", message.getInt32ToStringField().get(1));
-    assertEquals("33", message.getInt32ToStringField().get(3));
-    assertEquals("44", message.getInt32ToStringField().get(4));
+    assertEquals(3, message.getInt32ToStringFieldMap().size());
+    assertEquals("111", message.getInt32ToStringFieldMap().get(1));
+    assertEquals("33", message.getInt32ToStringFieldMap().get(3));
+    assertEquals("44", message.getInt32ToStringFieldMap().get(4));
 
-    assertEquals(3, message.getInt32ToBytesField().size());
-    assertEquals(TestUtil.toBytes("111"), message.getInt32ToBytesField().get(1));
-    assertEquals(TestUtil.toBytes("33"), message.getInt32ToBytesField().get(3));
-    assertEquals(TestUtil.toBytes("44"), message.getInt32ToBytesField().get(4));
+    assertEquals(3, message.getInt32ToBytesFieldMap().size());
+    assertEquals(TestUtil.toBytes("111"), message.getInt32ToBytesFieldMap().get(1));
+    assertEquals(TestUtil.toBytes("33"), message.getInt32ToBytesFieldMap().get(3));
+    assertEquals(TestUtil.toBytes("44"), message.getInt32ToBytesFieldMap().get(4));
 
-    assertEquals(3, message.getInt32ToEnumField().size());
-    assertEquals(TestMap.EnumValue.BAR, message.getInt32ToEnumField().get(1));
-    assertEquals(TestMap.EnumValue.BAZ, message.getInt32ToEnumField().get(3));
-    assertEquals(TestMap.EnumValue.QUX, message.getInt32ToEnumField().get(4));
+    assertEquals(3, message.getInt32ToEnumFieldMap().size());
+    assertEquals(TestMap.EnumValue.BAR, message.getInt32ToEnumFieldMap().get(1));
+    assertEquals(TestMap.EnumValue.BAZ, message.getInt32ToEnumFieldMap().get(3));
+    assertEquals(TestMap.EnumValue.QUX, message.getInt32ToEnumFieldMap().get(4));
 
-    assertEquals(3, message.getInt32ToMessageField().size());
-    assertEquals(111, message.getInt32ToMessageField().get(1).getValue());
-    assertEquals(33, message.getInt32ToMessageField().get(3).getValue());
-    assertEquals(44, message.getInt32ToMessageField().get(4).getValue());
+    assertEquals(3, message.getInt32ToMessageFieldMap().size());
+    assertEquals(111, message.getInt32ToMessageFieldMap().get(1).getValue());
+    assertEquals(33, message.getInt32ToMessageFieldMap().get(3).getValue());
+    assertEquals(44, message.getInt32ToMessageFieldMap().get(4).getValue());
 
-    assertEquals(3, message.getStringToInt32Field().size());
-    assertEquals(111, message.getStringToInt32Field().get("1").intValue());
-    assertEquals(33, message.getStringToInt32Field().get("3").intValue());
-    assertEquals(44, message.getStringToInt32Field().get("4").intValue());
+    assertEquals(3, message.getStringToInt32FieldMap().size());
+    assertEquals(111, message.getStringToInt32FieldMap().get("1").intValue());
+    assertEquals(33, message.getStringToInt32FieldMap().get("3").intValue());
+    assertEquals(44, message.getStringToInt32FieldMap().get("4").intValue());
   }
 
   private void assertMapValuesCleared(TestMapOrBuilder testMapOrBuilder) {
@@ -218,13 +206,13 @@ public final class MapForProto2LiteTest extends TestCase {
     TestMap.Builder builder = TestMap.newBuilder();
     TestMap message = builder.build();
     builder.putInt32ToInt32Field(1, 2);
-    assertTrue(message.getInt32ToInt32Field().isEmpty());
+    assertTrue(message.getInt32ToInt32FieldMap().isEmpty());
     message = builder.build();
-    assertEquals(newMap(1, 2), message.getInt32ToInt32Field());
-    assertEquals(newMap(1, 2), builder.getInt32ToInt32Field());
+    assertEquals(newMap(1, 2), message.getInt32ToInt32FieldMap());
+    assertEquals(newMap(1, 2), builder.getInt32ToInt32FieldMap());
     builder.putInt32ToInt32Field(2, 3);
-    assertEquals(newMap(1, 2), message.getInt32ToInt32Field());
-    assertEquals(newMap(1, 2, 2, 3), builder.getInt32ToInt32Field());
+    assertEquals(newMap(1, 2), message.getInt32ToInt32FieldMap());
+    assertEquals(newMap(1, 2, 2, 3), builder.getInt32ToInt32FieldMap());
   }
 
   public void testGetMapIsImmutable() {
@@ -265,37 +253,40 @@ public final class MapForProto2LiteTest extends TestCase {
   }
 
   public void testMutableMapLifecycle() {
-    TestMap.Builder builder = TestMap.newBuilder()
-        .putInt32ToInt32Field(1, 2);
-    assertEquals(newMap(1, 2), builder.build().getInt32ToInt32Field());
-    assertEquals(newMap(1, 2), builder.getInt32ToInt32Field());
+    TestMap.Builder builder = TestMap.newBuilder().putInt32ToInt32Field(1, 2);
+    assertEquals(newMap(1, 2), builder.build().getInt32ToInt32FieldMap());
+    assertEquals(newMap(1, 2), builder.getInt32ToInt32FieldMap());
     builder.putInt32ToInt32Field(2, 3);
-    assertEquals(newMap(1, 2, 2, 3), builder.getInt32ToInt32Field());
+    assertEquals(newMap(1, 2, 2, 3), builder.getInt32ToInt32FieldMap());
 
     builder.putInt32ToEnumField(1, TestMap.EnumValue.BAR);
-    assertEquals(newMap(1, TestMap.EnumValue.BAR), builder.build().getInt32ToEnumField());
-    assertEquals(newMap(1, TestMap.EnumValue.BAR), builder.getInt32ToEnumField());
+    assertEquals(newMap(1, TestMap.EnumValue.BAR), builder.build().getInt32ToEnumFieldMap());
+    assertEquals(newMap(1, TestMap.EnumValue.BAR), builder.getInt32ToEnumFieldMap());
     builder.putInt32ToEnumField(2, TestMap.EnumValue.FOO);
     assertEquals(
         newMap(1, TestMap.EnumValue.BAR, 2, TestMap.EnumValue.FOO),
-        builder.getInt32ToEnumField());
+        builder.getInt32ToEnumFieldMap());
 
     builder.putInt32ToStringField(1, "1");
-    assertEquals(newMap(1, "1"), builder.build().getInt32ToStringField());
-    assertEquals(newMap(1, "1"), builder.getInt32ToStringField());
+    assertEquals(newMap(1, "1"), builder.build().getInt32ToStringFieldMap());
+    assertEquals(newMap(1, "1"), builder.getInt32ToStringFieldMap());
     builder.putInt32ToStringField(2, "2");
-    assertEquals(newMap(1, "1", 2, "2"), builder.getInt32ToStringField());
+    assertEquals(newMap(1, "1", 2, "2"), builder.getInt32ToStringFieldMap());
 
     builder.putInt32ToMessageField(1, TestMap.MessageValue.getDefaultInstance());
-    assertEquals(newMap(1, TestMap.MessageValue.getDefaultInstance()),
-        builder.build().getInt32ToMessageField());
-    assertEquals(newMap(1, TestMap.MessageValue.getDefaultInstance()),
-        builder.getInt32ToMessageField());
+    assertEquals(
+        newMap(1, TestMap.MessageValue.getDefaultInstance()),
+        builder.build().getInt32ToMessageFieldMap());
+    assertEquals(
+        newMap(1, TestMap.MessageValue.getDefaultInstance()), builder.getInt32ToMessageFieldMap());
     builder.putInt32ToMessageField(2, TestMap.MessageValue.getDefaultInstance());
     assertEquals(
-        newMap(1, TestMap.MessageValue.getDefaultInstance(),
-            2, TestMap.MessageValue.getDefaultInstance()),
-        builder.getInt32ToMessageField());
+        newMap(
+            1,
+            TestMap.MessageValue.getDefaultInstance(),
+            2,
+            TestMap.MessageValue.getDefaultInstance()),
+        builder.getInt32ToMessageFieldMap());
   }
 
   public void testGettersAndSetters() throws Exception {
@@ -405,40 +396,32 @@ public final class MapForProto2LiteTest extends TestCase {
     ByteString bytes = TestUtil.toBytes("SOME BYTES");
     String stringKey = "a string key";
 
-    TestMap map = tryParseTestMap(BizarroTestMap.newBuilder()
-        .putInt32ToInt32Field(5, bytes)
-        .build());
+    TestMap map =
+        tryParseTestMap(BizarroTestMap.newBuilder().putInt32ToInt32Field(5, bytes).build());
     assertEquals(0, map.getInt32ToInt32FieldOrDefault(5, -1));
 
-    map = tryParseTestMap(BizarroTestMap.newBuilder()
-        .putInt32ToStringField(stringKey, 5)
-        .build());
+    map = tryParseTestMap(BizarroTestMap.newBuilder().putInt32ToStringField(stringKey, 5).build());
     assertEquals("", map.getInt32ToStringFieldOrDefault(0, null));
 
-    map = tryParseTestMap(BizarroTestMap.newBuilder()
-        .putInt32ToBytesField(stringKey, 5)
-        .build());
+    map = tryParseTestMap(BizarroTestMap.newBuilder().putInt32ToBytesField(stringKey, 5).build());
     assertEquals(map.getInt32ToBytesFieldOrDefault(0, null), ByteString.EMPTY);
 
-    map = tryParseTestMap(BizarroTestMap.newBuilder()
-        .putInt32ToEnumField(stringKey, bytes)
-        .build());
+    map =
+        tryParseTestMap(BizarroTestMap.newBuilder().putInt32ToEnumField(stringKey, bytes).build());
     assertEquals(TestMap.EnumValue.FOO, map.getInt32ToEnumFieldOrDefault(0, null));
 
     try {
-      tryParseTestMap(BizarroTestMap.newBuilder()
-          .putInt32ToMessageField(stringKey, bytes)
-          .build());
+      tryParseTestMap(BizarroTestMap.newBuilder().putInt32ToMessageField(stringKey, bytes).build());
       fail();
     } catch (InvalidProtocolBufferException expected) {
       assertTrue(expected.getUnfinishedMessage() instanceof TestMap);
       map = (TestMap) expected.getUnfinishedMessage();
-      assertTrue(map.getInt32ToMessageField().isEmpty());
+      assertTrue(map.getInt32ToMessageFieldMap().isEmpty());
     }
 
-    map = tryParseTestMap(BizarroTestMap.newBuilder()
-        .putStringToInt32Field(stringKey, bytes)
-        .build());
+    map =
+        tryParseTestMap(
+            BizarroTestMap.newBuilder().putStringToInt32Field(stringKey, bytes).build());
     assertEquals(0, map.getStringToInt32FieldOrDefault(stringKey, -1));
   }
 
@@ -458,16 +441,18 @@ public final class MapForProto2LiteTest extends TestCase {
 
     // We can't control the order of elements in a HashMap. The best we can do
     // here is to add elements in different order.
-    TestMap.Builder b1 = TestMap.newBuilder()
-        .putInt32ToInt32Field(1, 2)
-        .putInt32ToInt32Field(3, 4)
-        .putInt32ToInt32Field(5, 6);
-    TestMap m1 = b1.build();
+    TestMap m1 =
+        TestMap.newBuilder()
+            .putInt32ToInt32Field(1, 2)
+            .putInt32ToInt32Field(3, 4)
+            .putInt32ToInt32Field(5, 6)
+            .build();
 
-    TestMap.Builder b2 = TestMap.newBuilder()
-        .putInt32ToInt32Field(5, 6)
-        .putInt32ToInt32Field(1, 2)
-        .putInt32ToInt32Field(3, 4);
+    TestMap.Builder b2 =
+        TestMap.newBuilder()
+            .putInt32ToInt32Field(5, 6)
+            .putInt32ToInt32Field(1, 2)
+            .putInt32ToInt32Field(3, 4);
     TestMap m2 = b2.build();
 
     assertEquals(m1, m2);
@@ -482,23 +467,24 @@ public final class MapForProto2LiteTest extends TestCase {
   }
 
   public void testUnknownEnumValues() throws Exception {
-    TestUnknownEnumValue.Builder builder = TestUnknownEnumValue.newBuilder()
-        .putInt32ToInt32Field(1, 1)
-        .putInt32ToInt32Field(2, 54321);
-    ByteString data = builder.build().toByteString();
+    ByteString data =
+        TestUnknownEnumValue.newBuilder()
+            .putInt32ToInt32Field(1, 1)
+            .putInt32ToInt32Field(2, 54321)
+            .build()
+            .toByteString();
 
     TestMap message = TestMap.parseFrom(data);
     // Entries with unknown enum values will be stored into UnknownFieldSet so
     // there is only one entry in the map.
-    assertEquals(1, message.getInt32ToEnumField().size());
-    assertEquals(TestMap.EnumValue.BAR, message.getInt32ToEnumField().get(1));
+    assertEquals(1, message.getInt32ToEnumFieldMap().size());
+    assertEquals(TestMap.EnumValue.BAR, message.getInt32ToEnumFieldMap().get(1));
     // Serializing and parsing should preserve the unknown entry.
     data = message.toByteString();
-    TestUnknownEnumValue messageWithUnknownEnums =
-        TestUnknownEnumValue.parseFrom(data);
-    assertEquals(2, messageWithUnknownEnums.getInt32ToInt32Field().size());
-    assertEquals(1, messageWithUnknownEnums.getInt32ToInt32Field().get(1).intValue());
-    assertEquals(54321, messageWithUnknownEnums.getInt32ToInt32Field().get(2).intValue());
+    TestUnknownEnumValue messageWithUnknownEnums = TestUnknownEnumValue.parseFrom(data);
+    assertEquals(2, messageWithUnknownEnums.getInt32ToInt32FieldMap().size());
+    assertEquals(1, messageWithUnknownEnums.getInt32ToInt32FieldMap().get(1).intValue());
+    assertEquals(54321, messageWithUnknownEnums.getInt32ToInt32FieldMap().get(2).intValue());
   }
 
   public void testIterationOrder() throws Exception {
@@ -506,18 +492,19 @@ public final class MapForProto2LiteTest extends TestCase {
     setMapValues(builder);
     TestMap message = builder.build();
 
-    assertEquals(Arrays.asList("1", "2", "3"),
-        new ArrayList<String>(message.getStringToInt32Field().keySet()));
+    assertEquals(
+        Arrays.asList("1", "2", "3"),
+        new ArrayList<String>(message.getStringToInt32FieldMap().keySet()));
   }
 
   private static <K, V> Map<K, V> newMap(K key1, V value1) {
-    Map<K, V> map = new HashMap<K, V>();
+    Map<K, V> map = new HashMap<>();
     map.put(key1, value1);
     return map;
   }
 
   private static <K, V> Map<K, V> newMap(K key1, V value1, K key2, V value2) {
-    Map<K, V> map = new HashMap<K, V>();
+    Map<K, V> map = new HashMap<>();
     map.put(key1, value1);
     map.put(key2, value2);
     return map;
@@ -527,18 +514,10 @@ public final class MapForProto2LiteTest extends TestCase {
     TestMap.Builder builder = TestMap.newBuilder();
     setMapValues(builder);
     TestMap message = builder.build();
-    assertEquals(
-        message.getStringToInt32Field(),
-        message.getStringToInt32FieldMap());
-    assertEquals(
-        message.getInt32ToBytesField(),
-        message.getInt32ToBytesFieldMap());
-    assertEquals(
-        message.getInt32ToEnumField(),
-        message.getInt32ToEnumFieldMap());
-    assertEquals(
-        message.getInt32ToMessageField(),
-        message.getInt32ToMessageFieldMap());
+    assertEquals(message.getStringToInt32FieldMap(), message.getStringToInt32FieldMap());
+    assertEquals(message.getInt32ToBytesFieldMap(), message.getInt32ToBytesFieldMap());
+    assertEquals(message.getInt32ToEnumFieldMap(), message.getInt32ToEnumFieldMap());
+    assertEquals(message.getInt32ToMessageFieldMap(), message.getInt32ToMessageFieldMap());
   }
 
   public void testContains() {
@@ -629,7 +608,8 @@ public final class MapForProto2LiteTest extends TestCase {
     assertEquals(TestMap.EnumValue.FOO, testMapOrBuilder.getInt32ToEnumFieldOrDefault(1, null));
     assertNull(testMapOrBuilder.getInt32ToEnumFieldOrDefault(-1, null));
 
-    assertEquals(MessageValue.newBuilder().setValue(11).build(),
+    assertEquals(
+        MessageValue.newBuilder().setValue(11).build(),
         testMapOrBuilder.getInt32ToMessageFieldOrDefault(1, null));
     assertNull(testMapOrBuilder.getInt32ToMessageFieldOrDefault(-1, null));
 
@@ -687,7 +667,8 @@ public final class MapForProto2LiteTest extends TestCase {
       // expected
     }
 
-    assertEquals(MessageValue.newBuilder().setValue(11).build(),
+    assertEquals(
+        MessageValue.newBuilder().setValue(11).build(),
         testMapOrBuilder.getInt32ToMessageFieldOrThrow(1));
     try {
       testMapOrBuilder.getInt32ToMessageFieldOrThrow(-1);

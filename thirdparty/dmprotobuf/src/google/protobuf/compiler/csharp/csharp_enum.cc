@@ -31,7 +31,6 @@
 #include <sstream>
 
 #include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/plugin.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/io/printer.h>
@@ -62,12 +61,13 @@ void EnumGenerator::Generate(io::Printer* printer) {
                  "access_level", class_access_level(),
                  "name", descriptor_->name());
   printer->Indent();
-  std::set<string> used_names;
+  std::set<std::string> used_names;
   std::set<int> used_number;
   for (int i = 0; i < descriptor_->value_count(); i++) {
       WriteEnumValueDocComment(printer, descriptor_->value(i));
-      string original_name = descriptor_->value(i)->name();
-      string name = GetEnumValueName(descriptor_->name(), descriptor_->value(i)->name());
+      std::string original_name = descriptor_->value(i)->name();
+      std::string name =
+          GetEnumValueName(descriptor_->name(), descriptor_->value(i)->name());
       // Make sure we don't get any duplicate names due to prefix removal.
       while (!used_names.insert(name).second) {
         // It's possible we'll end up giving this warning multiple times, but that's better than not at all.
@@ -80,12 +80,12 @@ void EnumGenerator::Generate(io::Printer* printer) {
           printer->Print("[pbr::OriginalName(\"$original_name$\", PreferredAlias = false)] $name$ = $number$,\n",
              "original_name", original_name,
              "name", name,
-             "number", SimpleItoa(number));
+             "number", StrCat(number));
       } else {
           printer->Print("[pbr::OriginalName(\"$original_name$\")] $name$ = $number$,\n",
              "original_name", original_name,
              "name", name,
-             "number", SimpleItoa(number));
+             "number", StrCat(number));
       }
   }
   printer->Outdent();

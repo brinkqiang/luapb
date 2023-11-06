@@ -37,14 +37,15 @@
 #endif  // _WIN32
 
 #include <algorithm>
-#include <google/protobuf/stubs/hash.h>
 #include <map>
 #include <memory>
+#include <random>
 #include <set>
 #include <sstream>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include <google/protobuf/stubs/casts.h>
 #include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/stringprintf.h>
@@ -54,6 +55,7 @@
 #include <google/protobuf/map_test_util.h>
 #include <google/protobuf/map_unittest.pb.h>
 #include <google/protobuf/test_util.h>
+#include <google/protobuf/test_util2.h>
 #include <google/protobuf/unittest.pb.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/tokenizer.h>
@@ -69,27 +71,33 @@
 #include <google/protobuf/reflection_ops.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/wire_format.h>
-#include <google/protobuf/wire_format_lite_inl.h>
 #include <google/protobuf/util/message_differencer.h>
 #include <google/protobuf/util/time_util.h>
-#include <google/protobuf/stubs/substitute.h>
 #include <gmock/gmock.h>
 #include <google/protobuf/testing/googletest.h>
 #include <gtest/gtest.h>
+#include <google/protobuf/stubs/casts.h>
+#include <google/protobuf/stubs/substitute.h>
+
+
+// Must be included last.
+#include <google/protobuf/port_def.inc>
 
 namespace google {
-
-using google::protobuf::unittest::ForeignMessage;
-using google::protobuf::unittest::TestAllTypes;
-using google::protobuf::unittest::TestMap;
-using google::protobuf::unittest::TestRecursiveMapMessage;
-
 namespace protobuf {
+
+using unittest::ForeignMessage;
+using unittest::TestAllTypes;
+using unittest::TestMap;
+using unittest::TestRecursiveMapMessage;
+
 namespace internal {
 
 void MapTestForceDeterministic() {
-  ::google::protobuf::io::CodedOutputStream::SetDefaultSerializationDeterministic();
+  io::CodedOutputStream::SetDefaultSerializationDeterministic();
 }
+
+namespace {
 
 // Map API Test =====================================================
 
@@ -122,15 +130,16 @@ class MapImplTest : public ::testing::Test {
     // Test map size is correct.
     EXPECT_EQ(value, map_[key]);
     EXPECT_EQ(1, map_.count(key));
+    EXPECT_TRUE(map_.contains(key));
 
     // Check mutable at and find work correctly.
     EXPECT_EQ(value, map_.at(key));
     Map<int32, int32>::iterator it = map_.find(key);
 
     // iterator dereferenceable
-    EXPECT_EQ(key,   (*it).first);
+    EXPECT_EQ(key, (*it).first);
     EXPECT_EQ(value, (*it).second);
-    EXPECT_EQ(key,   it->first);
+    EXPECT_EQ(key, it->first);
     EXPECT_EQ(value, it->second);
 
     // iterator mutable
@@ -186,6 +195,62 @@ TEST_F(MapImplTest, OperatorBracket) {
   ExpectSingleElement(key, value2);
 }
 
+struct MoveTestKey {
+  MoveTestKey(int data, int* copies) : data(data), copies(copies) {}
+
+  MoveTestKey(const MoveTestKey& other)
+      : data(other.data), copies(other.copies) {
+    ++*copies;
+  }
+
+  MoveTestKey(MoveTestKey&& other) noexcept
+      : data(other.data), copies(other.copies) {}
+
+  friend bool operator==(const MoveTestKey& lhs, const MoveTestKey& rhs) {
+    return lhs.data == rhs.data;
+  }
+  friend bool operator<(const MoveTestKey& lhs, const MoveTestKey& rhs) {
+    return lhs.data < rhs.data;
+  }
+
+  int data;
+  int* copies;
+};
+
+}  // namespace
+}  // namespace internal
+}  // namespace protobuf
+}  // namespace google
+
+namespace std {
+
+template <>  // NOLINT
+struct hash<google::protobuf::internal::MoveTestKey> {
+  size_t operator()(const google::protobuf::internal::MoveTestKey& key) const {
+    return hash<int>{}(key.data);
+  }
+};
+}  // namespace std
+
+namespace google {
+namespace protobuf {
+namespace internal {
+namespace {
+
+TEST_F(MapImplTest, OperatorBracketRValue) {
+  Arena arena;
+  for (Arena* arena_to_use : {&arena, static_cast<Arena*>(nullptr)}) {
+    int copies = 0;
+    Map<MoveTestKey, int> map(arena_to_use);
+    MoveTestKey key1(1, &copies);
+    EXPECT_EQ(copies, 0);
+    map[key1] = 0;
+    EXPECT_EQ(copies, 1);
+    map[MoveTestKey(2, &copies)] = 2;
+    EXPECT_EQ(copies, 1);
+  }
+}
+
 TEST_F(MapImplTest, OperatorBracketNonExist) {
   int32 key = 0;
   int32 default_value = 0;
@@ -226,9 +291,10 @@ TEST_F(MapImplTest, UsageErrors) {
                "  Actual   : int64");
 
   MapValueRef value;
-  EXPECT_DEATH(value.SetFloatValue(0.1),
-               "Protocol Buffer map usage error:\n"
-               "MapValueRef::type MapValueRef is not initialized.");
+  EXPECT_DEATH(
+      value.SetFloatValue(0.1),
+      "Protocol Buffer map usage error:\n"
+      "MapValue[Const]*Ref::type MapValue[Const]*Ref is not initialized.");
 }
 
 #endif  // PROTOBUF_HAS_DEATH_TEST
@@ -240,8 +306,12 @@ TEST_F(MapImplTest, MapKeyAssignment) {
   EXPECT_EQ("abc", to.GetStringValue());
 }
 
-TEST_F(MapImplTest, CountNonExist) {
-  EXPECT_EQ(0, map_.count(0));
+TEST_F(MapImplTest, CountNonExist) { EXPECT_EQ(0, map_.count(0)); }
+
+TEST_F(MapImplTest, ContainNotExist) { EXPECT_FALSE(map_.contains(0)); }
+
+TEST_F(MapImplTest, ImmutableContainNotExist) {
+  EXPECT_FALSE(const_map_.contains(0));
 }
 
 TEST_F(MapImplTest, MutableFindNonExist) {
@@ -309,8 +379,8 @@ static int64 median(Iterator i0, Iterator i1) {
 }
 
 static int64 Now() {
-  return google::protobuf::util::TimeUtil::TimestampToNanoseconds(
-      google::protobuf::util::TimeUtil::GetCurrentTime());
+  return util::TimeUtil::TimestampToNanoseconds(
+      util::TimeUtil::GetCurrentTime());
 }
 
 // Arbitrary odd integers for creating test data.
@@ -421,8 +491,7 @@ TEST_F(MapImplTest, CopyIteratorStressTest) {
 }
 
 template <typename T, typename U>
-static void TestValidityForAllKeysExcept(int key_to_avoid,
-                                         const T& check_map,
+static void TestValidityForAllKeysExcept(int key_to_avoid, const T& check_map,
                                          const U& map) {
   typedef typename U::value_type value_type;  // a key-value pair
   for (typename U::const_iterator it = map.begin(); it != map.end(); ++it) {
@@ -454,7 +523,8 @@ template <typename IteratorType>
 static void TestOldVersusNewIterator(int skip, Map<int, int>* m) {
   const int initial_size = m->size();
   IteratorType it = m->begin();
-  for (int i = 0; i < skip && it != m->end(); it++, i++) {}
+  for (int i = 0; i < skip && it != m->end(); it++, i++) {
+  }
   if (it == m->end()) return;
   const IteratorType old = it;
   GOOGLE_LOG(INFO) << "skip=" << skip << ", old->first=" << old->first;
@@ -505,8 +575,8 @@ static void StressTestIterators(int n) {
   ASSERT_EQ(n, m.size());
   // Create maps of pointers and iterators.
   // These should remain valid even if we modify m.
-  hash_map<int, Map<int, int>::value_type*> mp(n);
-  hash_map<int, Map<int, int>::iterator> mi(n);
+  std::unordered_map<int, Map<int, int>::value_type*> mp(n);
+  std::unordered_map<int, Map<int, int>::iterator> mi(n);
   for (Map<int, int>::iterator it = m.begin(); it != m.end(); ++it) {
     mp[it->first] = &*it;
     mi[it->first] = it;
@@ -613,16 +683,13 @@ TEST_F(MapImplTest, IteratorConstness) {
 }
 
 bool IsForwardIteratorHelper(std::forward_iterator_tag /*tag*/) { return true; }
-template <typename T>
-bool IsForwardIteratorHelper(T /*t*/) {
-  return false;
-}
 
 TEST_F(MapImplTest, IteratorCategory) {
   EXPECT_TRUE(IsForwardIteratorHelper(
       std::iterator_traits<Map<int, int>::iterator>::iterator_category()));
-  EXPECT_TRUE(IsForwardIteratorHelper(std::iterator_traits<
-      Map<int, int>::const_iterator>::iterator_category()));
+  EXPECT_TRUE(IsForwardIteratorHelper(
+      std::iterator_traits<
+          Map<int, int>::const_iterator>::iterator_category()));
 }
 
 TEST_F(MapImplTest, InsertSingle) {
@@ -868,7 +935,7 @@ TEST_F(MapImplTest, Assigner) {
   EXPECT_TRUE(other.find(key_other) == other.end());
 
   // Self assign
-  other = other;
+  other = *&other;  // Avoid -Wself-assign.
   EXPECT_EQ(2, other.size());
   EXPECT_EQ(value1, other.at(key1));
   EXPECT_EQ(value2, other.at(key2));
@@ -895,8 +962,8 @@ TEST_F(MapImplTest, EqualRange) {
   int key = 100, key_missing = 101;
   map_[key] = 100;
 
-  std::pair<google::protobuf::Map<int32, int32>::iterator,
-            google::protobuf::Map<int32, int32>::iterator> range = map_.equal_range(key);
+  std::pair<Map<int32, int32>::iterator, Map<int32, int32>::iterator> range =
+      map_.equal_range(key);
   EXPECT_TRUE(map_.find(key) == range.first);
   EXPECT_TRUE(++map_.find(key) == range.second);
 
@@ -904,9 +971,9 @@ TEST_F(MapImplTest, EqualRange) {
   EXPECT_TRUE(map_.end() == range.first);
   EXPECT_TRUE(map_.end() == range.second);
 
-  std::pair<google::protobuf::Map<int32, int32>::const_iterator,
-            google::protobuf::Map<int32, int32>::const_iterator> const_range =
-      const_map_.equal_range(key);
+  std::pair<Map<int32, int32>::const_iterator,
+            Map<int32, int32>::const_iterator>
+      const_range = const_map_.equal_range(key);
   EXPECT_TRUE(const_map_.find(key) == const_range.first);
   EXPECT_TRUE(++const_map_.find(key) == const_range.second);
 
@@ -936,11 +1003,10 @@ TEST_F(MapImplTest, SwapBasic) {
   another[9398] = 41999;
   another[8070] = 42056;
   another.swap(map_);
-  EXPECT_THAT(another, testing::UnorderedElementsAre(
-      testing::Pair(9398, 41999)));
-  EXPECT_THAT(map_, testing::UnorderedElementsAre(
-      testing::Pair(8070, 42056),
-      testing::Pair(9398, 41999)));
+  EXPECT_THAT(another,
+              testing::UnorderedElementsAre(testing::Pair(9398, 41999)));
+  EXPECT_THAT(map_, testing::UnorderedElementsAre(testing::Pair(8070, 42056),
+                                                  testing::Pair(9398, 41999)));
 }
 
 TEST_F(MapImplTest, SwapArena) {
@@ -953,23 +1019,18 @@ TEST_F(MapImplTest, SwapArena) {
   m2[10244] = 10247;
   m2[8070] = 42056;
   m1.swap(map_);
-  EXPECT_THAT(m1, testing::UnorderedElementsAre(
-      testing::Pair(9398, 41999)));
-  EXPECT_THAT(map_, testing::UnorderedElementsAre(
-      testing::Pair(8070, 42056),
-      testing::Pair(9398, 41999)));
+  EXPECT_THAT(m1, testing::UnorderedElementsAre(testing::Pair(9398, 41999)));
+  EXPECT_THAT(map_, testing::UnorderedElementsAre(testing::Pair(8070, 42056),
+                                                  testing::Pair(9398, 41999)));
   m2.swap(m1);
-  EXPECT_THAT(m1, testing::UnorderedElementsAre(
-      testing::Pair(8070, 42056),
-      testing::Pair(10244, 10247)));
-  EXPECT_THAT(m2, testing::UnorderedElementsAre(
-      testing::Pair(9398, 41999)));
+  EXPECT_THAT(m1, testing::UnorderedElementsAre(testing::Pair(8070, 42056),
+                                                testing::Pair(10244, 10247)));
+  EXPECT_THAT(m2, testing::UnorderedElementsAre(testing::Pair(9398, 41999)));
 }
 
 TEST_F(MapImplTest, CopyAssignMapIterator) {
   TestMap message;
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaMapReflection(&message);
   MapIterator it1 = reflection_tester.MapBegin(&message, "map_int32_int32");
   MapIterator it2 = reflection_tester.MapEnd(&message, "map_int32_int32");
@@ -977,24 +1038,169 @@ TEST_F(MapImplTest, CopyAssignMapIterator) {
   EXPECT_EQ(it1.GetKey().GetInt32Value(), it2.GetKey().GetInt32Value());
 }
 
+TEST_F(MapImplTest, SpaceUsed) {
+  constexpr size_t kMinCap = 8;
+
+  Map<int32, int32> m;
+  // An newly constructed map should have no space used.
+  EXPECT_EQ(m.SpaceUsedExcludingSelfLong(), 0);
+
+  size_t capacity = kMinCap;
+  for (int i = 0; i < 100; ++i) {
+    m[i];
+    static constexpr double kMaxLoadFactor = .75;
+    if (m.size() >= capacity * kMaxLoadFactor) {
+      capacity *= 2;
+    }
+    EXPECT_EQ(m.SpaceUsedExcludingSelfLong(),
+              sizeof(void*) * capacity +
+                  m.size() * sizeof(std::pair<std::pair<int32, int32>, void*>));
+  }
+
+  // Test string, and non-scalar keys.
+  Map<std::string, int32> m2;
+  std::string str = "Some arbitrarily large string";
+  m2[str] = 1;
+  EXPECT_EQ(m2.SpaceUsedExcludingSelfLong(),
+            sizeof(void*) * kMinCap +
+                sizeof(std::pair<std::pair<std::string, int32>, void*>) +
+                internal::StringSpaceUsedExcludingSelfLong(str));
+
+  // Test messages, and non-scalar values.
+  Map<int32, TestAllTypes> m3;
+  m3[0].set_optional_string(str);
+  EXPECT_EQ(m3.SpaceUsedExcludingSelfLong(),
+            sizeof(void*) * kMinCap +
+                sizeof(std::pair<std::pair<int32, TestAllTypes>, void*>) +
+                m3[0].SpaceUsedLong() - sizeof(m3[0]));
+}
+
+// Attempts to verify that a map with keys a and b has a random ordering. This
+// function returns true if it succeeds in observing both possible orderings.
+bool MapOrderingIsRandom(int a, int b) {
+  bool saw_a_first = false;
+  bool saw_b_first = false;
+
+  for (int i = 0; i < 50; ++i) {
+    Map<int32, int32> m;
+    m[a] = 0;
+    m[b] = 0;
+    int32 first_element = m.begin()->first;
+    if (first_element == a) saw_a_first = true;
+    if (first_element == b) saw_b_first = true;
+    if (saw_a_first && saw_b_first) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// This test verifies that the iteration order is reasonably random even for
+// small maps. Currently we only have sufficient randomness for debug builds and
+// builds where we can use the RDTSC instruction, so we only test for those
+// builds.
+#if defined(__x86_64__) && defined(__GNUC__) && \
+    !defined(GOOGLE_PROTOBUF_NO_RDTSC)
+TEST_F(MapImplTest, RandomOrdering) {
+  for (int i = 0; i < 10; ++i) {
+    for (int j = i + 1; j < 10; ++j) {
+      EXPECT_TRUE(MapOrderingIsRandom(i, j))
+          << "Map with keys " << i << " and " << j
+          << " has deterministic ordering";
+    }
+  }
+}
+#endif
+
+template <typename Key>
+void TestTransparent(const Key& key, const Key& miss_key) {
+  Map<std::string, int> m;
+  const auto& cm = m;
+
+  m.insert({"ABC", 1});
+
+  const auto abc_it = m.begin();
+
+  m.insert({"DEF", 2});
+
+  using testing::Pair;
+  using testing::UnorderedElementsAre;
+
+  EXPECT_EQ(m.at(key), 1);
+  EXPECT_EQ(cm.at(key), 1);
+
+#ifdef PROTOBUF_HAS_DEATH_TEST
+  EXPECT_DEATH(m.at(miss_key), "");
+  EXPECT_DEATH(cm.at(miss_key), "");
+#endif  // PROTOBUF_HAS_DEATH_TEST
+
+  EXPECT_EQ(m.count(key), 1);
+  EXPECT_EQ(cm.count(key), 1);
+  EXPECT_EQ(m.count(miss_key), 0);
+  EXPECT_EQ(cm.count(miss_key), 0);
+
+  EXPECT_EQ(m.find(key), abc_it);
+  EXPECT_EQ(cm.find(key), abc_it);
+  EXPECT_EQ(m.find(miss_key), m.end());
+  EXPECT_EQ(cm.find(miss_key), cm.end());
+
+  EXPECT_TRUE(m.contains(key));
+  EXPECT_TRUE(cm.contains(key));
+  EXPECT_FALSE(m.contains(miss_key));
+  EXPECT_FALSE(cm.contains(miss_key));
+
+  EXPECT_THAT(m.equal_range(key), Pair(abc_it, std::next(abc_it)));
+  EXPECT_THAT(cm.equal_range(key), Pair(abc_it, std::next(abc_it)));
+  EXPECT_THAT(m.equal_range(miss_key), Pair(m.end(), m.end()));
+  EXPECT_THAT(cm.equal_range(miss_key), Pair(m.end(), m.end()));
+
+  EXPECT_THAT(m, UnorderedElementsAre(Pair("ABC", 1), Pair("DEF", 2)));
+  EXPECT_EQ(m.erase(key), 1);
+  EXPECT_THAT(m, UnorderedElementsAre(Pair("DEF", 2)));
+  EXPECT_EQ(m.erase(key), 0);
+  EXPECT_EQ(m.erase(miss_key), 0);
+  EXPECT_THAT(m, UnorderedElementsAre(Pair("DEF", 2)));
+
+  m[key];
+  EXPECT_THAT(m, UnorderedElementsAre(Pair("ABC", 0), Pair("DEF", 2)));
+  m[key] = 1;
+  EXPECT_THAT(m, UnorderedElementsAre(Pair("ABC", 1), Pair("DEF", 2)));
+}
+
+TEST_F(MapImplTest, TransparentLookupForString) {
+  TestTransparent("ABC", "LKJ");
+  TestTransparent(std::string("ABC"), std::string("LKJ"));
+#if defined(__cpp_lib_string_view)
+  TestTransparent(std::string_view("ABC"), std::string_view("LKJ"));
+#endif  // defined(__cpp_lib_string_view)
+
+  // std::reference_wrapper
+  std::string abc = "ABC", lkj = "LKJ";
+  TestTransparent(std::ref(abc), std::ref(lkj));
+  TestTransparent(std::cref(abc), std::cref(lkj));
+}
+
+TEST_F(MapImplTest, ConstInit) {
+  PROTOBUF_CONSTINIT static Map<int, int> map;  // NOLINT
+  EXPECT_TRUE(map.empty());
+}
+
 // Map Field Reflection Test ========================================
 
-static int Func(int i, int j) {
-  return i * j;
-}
+static int Func(int i, int j) { return i * j; }
 
-static string StrFunc(int i, int j) {
-  string str;
-  SStringPrintf(&str, "%d", Func(i, j));
-  return str;
-}
+static std::string StrFunc(int i, int j) { return StrCat(Func(i, j)); }
 
-static int Int(const string& value) {
+static int Int(const std::string& value) {
   int result = 0;
   std::istringstream(value) >> result;
   return result;
 }
 
+}  // namespace
+
+// This class is a friend, so no anonymous namespace.
 class MapFieldReflectionTest : public testing::Test {
  protected:
   typedef FieldDescriptor FD;
@@ -1005,6 +1211,8 @@ class MapFieldReflectionTest : public testing::Test {
   }
 };
 
+namespace {
+
 TEST_F(MapFieldReflectionTest, RegularFields) {
   TestMap message;
   const Reflection* refl = message.GetReflection();
@@ -1012,7 +1220,8 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
 
   Map<int32, int32>* map_int32_int32 = message.mutable_map_int32_int32();
   Map<int32, double>* map_int32_double = message.mutable_map_int32_double();
-  Map<string, string>* map_string_string = message.mutable_map_string_string();
+  Map<std::string, std::string>* map_string_string =
+      message.mutable_map_string_string();
   Map<int32, ForeignMessage>* map_int32_foreign_message =
       message.mutable_map_int32_foreign_message();
 
@@ -1057,10 +1266,8 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
       refl->GetRepeatedPtrField<Message>(message, fd_map_int32_double);
   const RepeatedPtrField<Message>& mf_string_string =
       refl->GetRepeatedPtrField<Message>(message, fd_map_string_string);
-  const RepeatedPtrField<Message>&
-      mf_int32_foreign_message =
-          refl->GetRepeatedPtrField<Message>(
-              message, fd_map_int32_foreign_message);
+  const RepeatedPtrField<Message>& mf_int32_foreign_message =
+      refl->GetRepeatedPtrField<Message>(message, fd_map_int32_foreign_message);
 
   // Get mutable RepeatedPtrField objects for all fields of interest.
   RepeatedPtrField<Message>* mmf_int32_int32 =
@@ -1070,8 +1277,8 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
   RepeatedPtrField<Message>* mmf_string_string =
       refl->MutableRepeatedPtrField<Message>(&message, fd_map_string_string);
   RepeatedPtrField<Message>* mmf_int32_foreign_message =
-      refl->MutableRepeatedPtrField<Message>(
-          &message, fd_map_int32_foreign_message);
+      refl->MutableRepeatedPtrField<Message>(&message,
+                                             fd_map_int32_foreign_message);
 
   // Make sure we can do gets through the RepeatedPtrField objects.
   for (int i = 0; i < 10; ++i) {
@@ -1093,10 +1300,10 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
       EXPECT_EQ(value_int32_double, Func(key_int32_double, 2));
 
       const Message& message_string_string = mf_string_string.Get(i);
-      string key_string_string =
+      std::string key_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_key);
-      string value_string_string =
+      std::string value_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_value);
       EXPECT_EQ(value_string_string, StrFunc(Int(key_string_string), 5));
@@ -1106,9 +1313,8 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
           message_int32_message, fd_map_int32_foreign_message_key);
       const ForeignMessage& value_int32_message =
           down_cast<const ForeignMessage&>(
-              message_int32_message.GetReflection()
-                  ->GetMessage(message_int32_message,
-                               fd_map_int32_foreign_message_value));
+              message_int32_message.GetReflection()->GetMessage(
+                  message_int32_message, fd_map_int32_foreign_message_value));
       EXPECT_EQ(value_int32_message.c(), Func(key_int32_message, 6));
     }
 
@@ -1130,10 +1336,10 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
       EXPECT_EQ(value_int32_double, Func(key_int32_double, 2));
 
       const Message& message_string_string = mmf_string_string->Get(i);
-      string key_string_string =
+      std::string key_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_key);
-      string value_string_string =
+      std::string value_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_value);
       EXPECT_EQ(value_string_string, StrFunc(Int(key_string_string), 5));
@@ -1143,9 +1349,8 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
           message_int32_message, fd_map_int32_foreign_message_key);
       const ForeignMessage& value_int32_message =
           down_cast<const ForeignMessage&>(
-              message_int32_message.GetReflection()
-                  ->GetMessage(message_int32_message,
-                               fd_map_int32_foreign_message_value));
+              message_int32_message.GetReflection()->GetMessage(
+                  message_int32_message, fd_map_int32_foreign_message_value));
       EXPECT_EQ(value_int32_message.c(), Func(key_int32_message, 6));
     }
   }
@@ -1168,7 +1373,7 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
           Func(key_int32_double, -2));
 
       Message* message_string_string = mmf_string_string->Mutable(i);
-      string key_string_string =
+      std::string key_string_string =
           message_string_string->GetReflection()->GetString(
               *message_string_string, fd_map_string_string_key);
       message_string_string->GetReflection()->SetString(
@@ -1180,9 +1385,8 @@ TEST_F(MapFieldReflectionTest, RegularFields) {
           message_int32_message->GetReflection()->GetInt32(
               *message_int32_message, fd_map_int32_foreign_message_key);
       ForeignMessage* value_int32_message = down_cast<ForeignMessage*>(
-          message_int32_message->GetReflection()
-              ->MutableMessage(message_int32_message,
-                               fd_map_int32_foreign_message_value));
+          message_int32_message->GetReflection()->MutableMessage(
+              message_int32_message, fd_map_int32_foreign_message_value));
       value_int32_message->set_c(Func(key_int32_message, -6));
     }
   }
@@ -1203,7 +1407,8 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
 
   Map<int32, int32>* map_int32_int32 = message.mutable_map_int32_int32();
   Map<int32, double>* map_int32_double = message.mutable_map_int32_double();
-  Map<string, string>* map_string_string = message.mutable_map_string_string();
+  Map<std::string, std::string>* map_string_string =
+      message.mutable_map_string_string();
   Map<int32, ForeignMessage>* map_int32_foreign_message =
       message.mutable_map_int32_foreign_message();
 
@@ -1258,10 +1463,9 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
       refl->GetMutableRepeatedFieldRef<Message>(&message, fd_map_int32_double);
   const MutableRepeatedFieldRef<Message> mmf_string_string =
       refl->GetMutableRepeatedFieldRef<Message>(&message, fd_map_string_string);
-  const MutableRepeatedFieldRef<Message>
-      mmf_int32_foreign_message =
-          refl->GetMutableRepeatedFieldRef<Message>(
-              &message, fd_map_int32_foreign_message);
+  const MutableRepeatedFieldRef<Message> mmf_int32_foreign_message =
+      refl->GetMutableRepeatedFieldRef<Message>(&message,
+                                                fd_map_int32_foreign_message);
 
   // Get entry default instances
   std::unique_ptr<Message> entry_int32_int32(
@@ -1322,10 +1526,10 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
 
       const Message& message_string_string =
           mf_string_string.Get(i, entry_string_string.get());
-      string key_string_string =
+      std::string key_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_key);
-      string value_string_string =
+      std::string value_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_value);
       EXPECT_EQ(value_string_string, StrFunc(Int(key_string_string), 5));
@@ -1336,9 +1540,8 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
           message_int32_message, fd_map_int32_foreign_message_key);
       const ForeignMessage& value_int32_message =
           down_cast<const ForeignMessage&>(
-              message_int32_message.GetReflection()
-                  ->GetMessage(message_int32_message,
-                               fd_map_int32_foreign_message_value));
+              message_int32_message.GetReflection()->GetMessage(
+                  message_int32_message, fd_map_int32_foreign_message_value));
       EXPECT_EQ(value_int32_message.c(), Func(key_int32_message, 6));
     }
 
@@ -1363,10 +1566,10 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
 
       const Message& message_string_string =
           mmf_string_string.Get(i, entry_string_string.get());
-      string key_string_string =
+      std::string key_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_key);
-      string value_string_string =
+      std::string value_string_string =
           message_string_string.GetReflection()->GetString(
               message_string_string, fd_map_string_string_value);
       EXPECT_EQ(value_string_string, StrFunc(Int(key_string_string), 5));
@@ -1377,9 +1580,8 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
           message_int32_message, fd_map_int32_foreign_message_key);
       const ForeignMessage& value_int32_message =
           down_cast<const ForeignMessage&>(
-              message_int32_message.GetReflection()
-                  ->GetMessage(message_int32_message,
-                               fd_map_int32_foreign_message_value));
+              message_int32_message.GetReflection()->GetMessage(
+                  message_int32_message, fd_map_int32_foreign_message_value));
       EXPECT_EQ(value_int32_message.c(), Func(key_int32_message, 6));
     }
   }
@@ -1436,7 +1638,7 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
   // Test iterators.
   {
     int index = 0;
-    hash_map<int32, int32> result;
+    std::unordered_map<int32, int32> result;
     for (RepeatedFieldRef<Message>::iterator it = mf_int32_int32.begin();
          it != mf_int32_int32.end(); ++it) {
       const Message& message = *it;
@@ -1448,7 +1650,7 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
       ++index;
     }
     EXPECT_EQ(10, index);
-    for (hash_map<int32, int32>::const_iterator it = result.begin();
+    for (std::unordered_map<int32, int32>::const_iterator it = result.begin();
          it != result.end(); ++it) {
       EXPECT_EQ(message.map_int32_int32().at(it->first), it->second);
     }
@@ -1456,7 +1658,7 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
 
   {
     int index = 0;
-    hash_map<int32, double> result;
+    std::unordered_map<int32, double> result;
     for (RepeatedFieldRef<Message>::iterator it = mf_int32_double.begin();
          it != mf_int32_double.end(); ++it) {
       const Message& message = *it;
@@ -1468,7 +1670,7 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
       ++index;
     }
     EXPECT_EQ(10, index);
-    for (hash_map<int32, double>::const_iterator it = result.begin();
+    for (std::unordered_map<int32, double>::const_iterator it = result.begin();
          it != result.end(); ++it) {
       EXPECT_EQ(message.map_int32_double().at(it->first), it->second);
     }
@@ -1476,19 +1678,20 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
 
   {
     int index = 0;
-    hash_map<string, string> result;
+    std::unordered_map<std::string, std::string> result;
     for (RepeatedFieldRef<Message>::iterator it = mf_string_string.begin();
          it != mf_string_string.end(); ++it) {
       const Message& message = *it;
-      string key =
+      std::string key =
           message.GetReflection()->GetString(message, fd_map_string_string_key);
-      string value = message.GetReflection()->GetString(
+      std::string value = message.GetReflection()->GetString(
           message, fd_map_string_string_value);
       result[key] = value;
       ++index;
     }
     EXPECT_EQ(10, index);
-    for (hash_map<string, string>::const_iterator it = result.begin();
+    for (std::unordered_map<std::string, std::string>::const_iterator it =
+             result.begin();
          it != result.end(); ++it) {
       EXPECT_EQ(message.map_string_string().at(it->first), it->second);
     }
@@ -1503,9 +1706,9 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
       const Message& message = *it;
       int32 key = message.GetReflection()->GetInt32(
           message, fd_map_int32_foreign_message_key);
-      const ForeignMessage& sub_message = down_cast<const ForeignMessage&>(
-          message.GetReflection()
-              ->GetMessage(message, fd_map_int32_foreign_message_value));
+      const ForeignMessage& sub_message =
+          down_cast<const ForeignMessage&>(message.GetReflection()->GetMessage(
+              message, fd_map_int32_foreign_message_value));
       result[key].MergeFrom(sub_message);
       ++index;
     }
@@ -1537,8 +1740,8 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
   EXPECT_EQ(1234.0, message.map_int32_double().at(4321));
 
   entry_string_string->GetReflection()->SetString(
-      entry_string_string.get(),
-      fd_map_string_string->message_type()->field(0), "4321");
+      entry_string_string.get(), fd_map_string_string->message_type()->field(0),
+      "4321");
   entry_string_string->GetReflection()->SetString(
       entry_string_string.get(), fd_map_string_string->message_type()->field(1),
       "1234");
@@ -1560,12 +1763,13 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
   EXPECT_EQ(1234, message.map_int32_foreign_message().at(4321).c());
 
   // Test Reflection::AddAllocatedMessage
-  Message* free_entry_string_string = MessageFactory::generated_factory()
-      ->GetPrototype(fd_map_string_string->message_type())
-      ->New();
+  Message* free_entry_string_string =
+      MessageFactory::generated_factory()
+          ->GetPrototype(fd_map_string_string->message_type())
+          ->New();
   entry_string_string->GetReflection()->SetString(
-      free_entry_string_string,
-      fd_map_string_string->message_type()->field(0), "4321");
+      free_entry_string_string, fd_map_string_string->message_type()->field(0),
+      "4321");
   entry_string_string->GetReflection()->SetString(
       free_entry_string_string, fd_map_string_string->message_type()->field(1),
       "1234");
@@ -1632,22 +1836,22 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
   {
     const Message& message0a =
         mmf_string_string.Get(0, entry_string_string.get());
-    string string_value0a = message0a.GetReflection()->GetString(
+    std::string string_value0a = message0a.GetReflection()->GetString(
         message0a, fd_map_string_string_value);
     const Message& message9a =
         mmf_string_string.Get(9, entry_string_string.get());
-    string string_value9a = message9a.GetReflection()->GetString(
+    std::string string_value9a = message9a.GetReflection()->GetString(
         message9a, fd_map_string_string_value);
 
     mmf_string_string.SwapElements(0, 9);
 
     const Message& message0b =
         mmf_string_string.Get(0, entry_string_string.get());
-    string string_value0b = message0b.GetReflection()->GetString(
+    std::string string_value0b = message0b.GetReflection()->GetString(
         message0b, fd_map_string_string_value);
     const Message& message9b =
         mmf_string_string.Get(9, entry_string_string.get());
-    string string_value9b = message9b.GetReflection()->GetString(
+    std::string string_value9b = message9b.GetReflection()->GetString(
         message9b, fd_map_string_string_value);
 
     EXPECT_EQ(string_value9a, string_value0b);
@@ -1657,30 +1861,30 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefForRegularFields) {
   {
     const Message& message0a =
         mmf_int32_foreign_message.Get(0, entry_int32_foreign_message.get());
-    const ForeignMessage& sub_message0a = down_cast<const ForeignMessage&>(
-        message0a.GetReflection()
-            ->GetMessage(message0a, fd_map_int32_foreign_message_value));
+    const ForeignMessage& sub_message0a =
+        down_cast<const ForeignMessage&>(message0a.GetReflection()->GetMessage(
+            message0a, fd_map_int32_foreign_message_value));
     int32 int32_value0a = sub_message0a.c();
     const Message& message9a =
         mmf_int32_foreign_message.Get(9, entry_int32_foreign_message.get());
-    const ForeignMessage& sub_message9a = down_cast<const ForeignMessage&>(
-        message9a.GetReflection()
-            ->GetMessage(message9a, fd_map_int32_foreign_message_value));
+    const ForeignMessage& sub_message9a =
+        down_cast<const ForeignMessage&>(message9a.GetReflection()->GetMessage(
+            message9a, fd_map_int32_foreign_message_value));
     int32 int32_value9a = sub_message9a.c();
 
     mmf_int32_foreign_message.SwapElements(0, 9);
 
     const Message& message0b =
         mmf_int32_foreign_message.Get(0, entry_int32_foreign_message.get());
-    const ForeignMessage& sub_message0b = down_cast<const ForeignMessage&>(
-        message0b.GetReflection()
-            ->GetMessage(message0b, fd_map_int32_foreign_message_value));
+    const ForeignMessage& sub_message0b =
+        down_cast<const ForeignMessage&>(message0b.GetReflection()->GetMessage(
+            message0b, fd_map_int32_foreign_message_value));
     int32 int32_value0b = sub_message0b.c();
     const Message& message9b =
         mmf_int32_foreign_message.Get(9, entry_int32_foreign_message.get());
-    const ForeignMessage& sub_message9b = down_cast<const ForeignMessage&>(
-        message9b.GetReflection()
-            ->GetMessage(message9b, fd_map_int32_foreign_message_value));
+    const ForeignMessage& sub_message9b =
+        down_cast<const ForeignMessage&>(message9b.GetReflection()->GetMessage(
+            message9b, fd_map_int32_foreign_message_value));
     int32 int32_value9b = sub_message9b.c();
 
     EXPECT_EQ(int32_value9a, int32_value0b);
@@ -1719,34 +1923,26 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefMergeFromAndSwap) {
   const FieldDescriptor* fd_map_int32_foreign_message =
       desc->FindFieldByName("map_int32_foreign_message");
 
-    // Get MutableRepeatedFieldRef objects for all fields of interest.
+  // Get MutableRepeatedFieldRef objects for all fields of interest.
   const MutableRepeatedFieldRef<Message> mmf_int32_int32 =
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m0, fd_map_int32_int32);
+      refl->GetMutableRepeatedFieldRef<Message>(&m0, fd_map_int32_int32);
   const MutableRepeatedFieldRef<Message> mmf_int32_double =
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m0, fd_map_int32_double);
+      refl->GetMutableRepeatedFieldRef<Message>(&m0, fd_map_int32_double);
   const MutableRepeatedFieldRef<Message> mmf_string_string =
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m0, fd_map_string_string);
-  const MutableRepeatedFieldRef<Message>
-      mmf_int32_foreign_message =
-          refl->GetMutableRepeatedFieldRef<Message>(
-              &m0, fd_map_int32_foreign_message);
+      refl->GetMutableRepeatedFieldRef<Message>(&m0, fd_map_string_string);
+  const MutableRepeatedFieldRef<Message> mmf_int32_foreign_message =
+      refl->GetMutableRepeatedFieldRef<Message>(&m0,
+                                                fd_map_int32_foreign_message);
 
   // Test MutableRepeatedRef::CopyFrom
   mmf_int32_int32.CopyFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m1, fd_map_int32_int32));
+      refl->GetRepeatedFieldRef<Message>(m1, fd_map_int32_int32));
   mmf_int32_double.CopyFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m1, fd_map_int32_double));
+      refl->GetRepeatedFieldRef<Message>(m1, fd_map_int32_double));
   mmf_string_string.CopyFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m1, fd_map_string_string));
+      refl->GetRepeatedFieldRef<Message>(m1, fd_map_string_string));
   mmf_int32_foreign_message.CopyFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m1, fd_map_int32_foreign_message));
+      refl->GetRepeatedFieldRef<Message>(m1, fd_map_int32_foreign_message));
 
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(Func(i, 11), m0.map_int32_int32().at(i + 10));
@@ -1757,17 +1953,13 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefMergeFromAndSwap) {
 
   // Test MutableRepeatedRef::MergeFrom
   mmf_int32_int32.MergeFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m2, fd_map_int32_int32));
+      refl->GetRepeatedFieldRef<Message>(m2, fd_map_int32_int32));
   mmf_int32_double.MergeFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m2, fd_map_int32_double));
+      refl->GetRepeatedFieldRef<Message>(m2, fd_map_int32_double));
   mmf_string_string.MergeFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m2, fd_map_string_string));
+      refl->GetRepeatedFieldRef<Message>(m2, fd_map_string_string));
   mmf_int32_foreign_message.MergeFrom(
-      refl->GetRepeatedFieldRef<Message>(
-          m2, fd_map_int32_foreign_message));
+      refl->GetRepeatedFieldRef<Message>(m2, fd_map_int32_foreign_message));
   for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(Func(i, 21), m0.map_int32_int32().at(i + 20));
     EXPECT_EQ(Func(i, 22), m0.map_int32_double().at(i + 20));
@@ -1778,17 +1970,13 @@ TEST_F(MapFieldReflectionTest, RepeatedFieldRefMergeFromAndSwap) {
   // Test MutableRepeatedRef::Swap
   // Swap between m0 and m2.
   mmf_int32_int32.Swap(
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m2, fd_map_int32_int32));
+      refl->GetMutableRepeatedFieldRef<Message>(&m2, fd_map_int32_int32));
   mmf_int32_double.Swap(
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m2, fd_map_int32_double));
+      refl->GetMutableRepeatedFieldRef<Message>(&m2, fd_map_int32_double));
   mmf_string_string.Swap(
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m2, fd_map_string_string));
-  mmf_int32_foreign_message.Swap(
-      refl->GetMutableRepeatedFieldRef<Message>(
-          &m2, fd_map_int32_foreign_message));
+      refl->GetMutableRepeatedFieldRef<Message>(&m2, fd_map_string_string));
+  mmf_int32_foreign_message.Swap(refl->GetMutableRepeatedFieldRef<Message>(
+      &m2, fd_map_int32_foreign_message));
   for (int i = 0; i < 10; ++i) {
     // Check the content of m0.
     EXPECT_EQ(Func(i, 21), m0.map_int32_int32().at(i + 20));
@@ -1853,6 +2041,49 @@ TEST_F(MapFieldReflectionTest, MapSizeWithDuplicatedKey) {
     EXPECT_EQ(2, reflection->FieldSize(message, field));
     EXPECT_EQ(1, MapSize(reflection, field, message));
   }
+}
+
+TEST_F(MapFieldReflectionTest, UninitializedEntry) {
+  unittest::TestRequiredMessageMap message;
+  const Reflection* reflection = message.GetReflection();
+  const FieldDescriptor* field =
+      message.GetDescriptor()->FindFieldByName("map_field");
+  auto entry = reflection->AddMessage(&message, field);
+  EXPECT_FALSE(entry->IsInitialized());
+  EXPECT_FALSE(message.IsInitialized());
+}
+
+class MyMapEntry
+    : public internal::MapEntry<MyMapEntry, ::google::protobuf::int32, ::google::protobuf::int32,
+                                internal::WireFormatLite::TYPE_INT32,
+                                internal::WireFormatLite::TYPE_INT32> {
+ public:
+  constexpr MyMapEntry() {}
+  MyMapEntry(Arena*) { std::abort(); }
+  Metadata GetMetadata() const override { std::abort(); }
+  static bool ValidateKey(void*) { return true; }
+  static bool ValidateValue(void*) { return true; }
+};
+
+class MyMapEntryLite
+    : public internal::MapEntryLite<MyMapEntryLite, ::google::protobuf::int32, ::google::protobuf::int32,
+                                    internal::WireFormatLite::TYPE_INT32,
+                                    internal::WireFormatLite::TYPE_INT32> {
+ public:
+  constexpr MyMapEntryLite() {}
+  explicit MyMapEntryLite(Arena*) { std::abort(); }
+  static bool ValidateKey(void*) { return true; }
+  static bool ValidateValue(void*) { return true; }
+};
+
+TEST(MapEntryTest, ConstInit) {
+  // This verifies that `MapEntry`, `MapEntryLite` and `MapEntryImpl` can be
+  // constant initialized.
+  PROTOBUF_CONSTINIT static MyMapEntry entry{};
+  EXPECT_NE(entry.SpaceUsed(), 0);
+
+  PROTOBUF_CONSTINIT static MyMapEntryLite entry_lite{};  // NOLINT
+  EXPECT_TRUE(entry_lite.IsInitialized());
 }
 
 // Generated Message Test ===========================================
@@ -1975,8 +2206,7 @@ TEST(GeneratedMapFieldTest, CopyAssignmentOperator) {
   MapTestUtil::ExpectMapFieldsSet(message2);
 }
 
-#if !defined(PROTOBUF_TEST_NO_DESCRIPTORS) || \
-        !defined(GOOGLE_PROTOBUF_NO_RTTI)
+#if !defined(PROTOBUF_TEST_NO_DESCRIPTORS) || PROTOBUF_RTTI
 TEST(GeneratedMapFieldTest, UpcastCopyFrom) {
   // Test the CopyFrom method that takes in the generic const Message&
   // parameter.
@@ -2001,10 +2231,8 @@ TEST(GeneratedMapFieldTest, CopyFromDynamicMessage) {
   // Construct a new version of the dynamic message via the factory.
   DynamicMessageFactory factory;
   std::unique_ptr<Message> message1;
-  message1.reset(
-      factory.GetPrototype(unittest::TestMap::descriptor())->New());
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  message1.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaReflection(message1.get());
   reflection_tester.ExpectMapFieldsSetViaReflection(*message1);
   reflection_tester.ExpectMapFieldsSetViaReflectionIterator(message1.get());
@@ -2018,15 +2246,45 @@ TEST(GeneratedMapFieldTest, CopyFromDynamicMessageMapReflection) {
   // Construct a new version of the dynamic message via the factory.
   DynamicMessageFactory factory;
   std::unique_ptr<Message> message1;
-  message1.reset(
-      factory.GetPrototype(unittest::TestMap::descriptor())->New());
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  message1.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaMapReflection(message1.get());
   reflection_tester.ExpectMapFieldsSetViaReflection(*message1);
   reflection_tester.ExpectMapFieldsSetViaReflectionIterator(message1.get());
   message2.CopyFrom(*message1);
   MapTestUtil::ExpectMapFieldsSet(message2);
+}
+
+TEST(GeneratedMapFieldTest, DynamicMessageMergeFromDynamicMessage) {
+  // Construct two dynamic message and sets via map reflection.
+  DynamicMessageFactory factory;
+  std::unique_ptr<Message> message1;
+  message1.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
+  reflection_tester.SetMapFieldsViaMapReflection(message1.get());
+
+  // message2 is created by same factory.
+  std::unique_ptr<Message> message2;
+  message2.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  reflection_tester.SetMapFieldsViaMapReflection(message2.get());
+
+  // message3 is created by different factory.
+  DynamicMessageFactory factory3;
+  std::unique_ptr<Message> message3;
+  message3.reset(factory3.GetPrototype(unittest::TestMap::descriptor())->New());
+  reflection_tester.SetMapFieldsViaMapReflection(message3.get());
+
+  message2->MergeFrom(*message1);
+  message3->MergeFrom(*message1);
+
+  // Test MergeFrom does not sync to repeated fields and
+  // there is no duplicate keys in text format.
+  std::string output1, output2, output3;
+  TextFormat::PrintToString(*message1, &output1);
+  TextFormat::PrintToString(*message2, &output2);
+  TextFormat::PrintToString(*message3, &output3);
+  EXPECT_EQ(output1, output2);
+  EXPECT_EQ(output1, output3);
 }
 
 TEST(GeneratedMapFieldTest, DynamicMessageCopyFrom) {
@@ -2037,27 +2295,23 @@ TEST(GeneratedMapFieldTest, DynamicMessageCopyFrom) {
   // Construct a new version of the dynamic message via the factory.
   DynamicMessageFactory factory;
   std::unique_ptr<Message> message1;
-  message1.reset(
-      factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  message1.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
 
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   message1->MergeFrom(message2);
   reflection_tester.ExpectMapFieldsSetViaReflection(*message1);
   reflection_tester.ExpectMapFieldsSetViaReflectionIterator(message1.get());
 }
 
 TEST(GeneratedMapFieldTest, DynamicMessageCopyFromMapReflection) {
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   unittest::TestMap message2;
   reflection_tester.SetMapFieldsViaMapReflection(&message2);
 
   // Construct a dynamic message via the factory.
   DynamicMessageFactory factory;
   std::unique_ptr<Message> message1;
-  message1.reset(
-      factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  message1.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
 
   message1->MergeFrom(message2);
   reflection_tester.ExpectMapFieldsSetViaReflectionIterator(message1.get());
@@ -2066,12 +2320,10 @@ TEST(GeneratedMapFieldTest, DynamicMessageCopyFromMapReflection) {
 
 TEST(GeneratedMapFieldTest, SyncDynamicMapWithRepeatedField) {
   // Construct a dynamic message via the factory.
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   DynamicMessageFactory factory;
   std::unique_ptr<Message> message;
-  message.reset(
-      factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  message.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
   reflection_tester.SetMapFieldsViaReflection(message.get());
   reflection_tester.ExpectMapFieldsSetViaReflectionIterator(message.get());
   reflection_tester.ExpectMapFieldsSetViaReflection(*message);
@@ -2094,6 +2346,18 @@ TEST(GeneratedMapFieldTest, NonEmptyMergeFrom) {
 
   message1.MergeFrom(message2);
   MapTestUtil::ExpectMapFieldsSet(message1);
+
+  // Test reflection MergeFrom does not sync to repeated field
+  // and there is no duplicated keys.
+  MapTestUtil::SetMapFields(&message1);
+  MapTestUtil::SetMapFields(&message2);
+
+  message2.MergeFrom(message1);
+
+  std::string output1, output2;
+  TextFormat::PrintToString(message1, &output1);
+  TextFormat::PrintToString(message2, &output2);
+  EXPECT_EQ(output1, output2);
 }
 
 TEST(GeneratedMapFieldTest, MergeFromMessageMap) {
@@ -2112,11 +2376,11 @@ TEST(GeneratedMapFieldTest, MergeFromMessageMap) {
 // Test the generated SerializeWithCachedSizesToArray()
 TEST(GeneratedMapFieldTest, SerializationToArray) {
   unittest::TestMap message1, message2;
-  string data;
+  std::string data;
   MapTestUtil::SetMapFields(&message1);
-  int size = message1.ByteSize();
+  size_t size = message1.ByteSizeLong();
   data.resize(size);
-  uint8* start = reinterpret_cast<uint8*>(string_as_array(&data));
+  uint8* start = reinterpret_cast<uint8*>(::google::protobuf::string_as_array(&data));
   uint8* end = message1.SerializeWithCachedSizesToArray(start);
   EXPECT_EQ(size, end - start);
   EXPECT_TRUE(message2.ParseFromString(data));
@@ -2127,12 +2391,12 @@ TEST(GeneratedMapFieldTest, SerializationToArray) {
 TEST(GeneratedMapFieldTest, SerializationToStream) {
   unittest::TestMap message1, message2;
   MapTestUtil::SetMapFields(&message1);
-  int size = message1.ByteSize();
-  string data;
+  size_t size = message1.ByteSizeLong();
+  std::string data;
   data.resize(size);
   {
     // Allow the output stream to buffer only one byte at a time.
-    io::ArrayOutputStream array_stream(string_as_array(&data), size, 1);
+    io::ArrayOutputStream array_stream(::google::protobuf::string_as_array(&data), size, 1);
     io::CodedOutputStream output_stream(&array_stream);
     message1.SerializeWithCachedSizes(&output_stream);
     EXPECT_FALSE(output_stream.HadError());
@@ -2164,7 +2428,7 @@ TEST(GeneratedMapFieldTest, Proto2UnknownEnum) {
   unittest::TestEnumMapPlusExtra from;
   (*from.mutable_known_map_field())[0] = unittest::E_PROTO2_MAP_ENUM_FOO;
   (*from.mutable_unknown_map_field())[0] = unittest::E_PROTO2_MAP_ENUM_EXTRA;
-  string data;
+  std::string data;
   from.SerializeToString(&data);
 
   unittest::TestEnumMap to;
@@ -2189,7 +2453,7 @@ TEST(GeneratedMapFieldTest, Proto2UnknownEnum) {
 
 TEST(GeneratedMapFieldTest, StandardWireFormat) {
   unittest::TestMap message;
-  string data = "\x0A\x04\x08\x01\x10\x01";
+  std::string data = "\x0A\x04\x08\x01\x10\x01";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
@@ -2200,10 +2464,11 @@ TEST(GeneratedMapFieldTest, UnorderedWireFormat) {
   unittest::TestMap message;
 
   // put value before key in wire format
-  string data = "\x0A\x04\x10\x01\x08\x02";
+  std::string data = "\x0A\x04\x10\x01\x08\x02";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
+  ASSERT_NE(message.map_int32_int32().find(2), message.map_int32_int32().end());
   EXPECT_EQ(1, message.map_int32_int32().at(2));
 }
 
@@ -2211,7 +2476,7 @@ TEST(GeneratedMapFieldTest, DuplicatedKeyWireFormat) {
   unittest::TestMap message;
 
   // Two key fields in wire format
-  string data = "\x0A\x06\x08\x01\x08\x02\x10\x01";
+  std::string data = "\x0A\x06\x08\x01\x08\x02\x10\x01";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
@@ -2228,14 +2493,14 @@ TEST(GeneratedMapFieldTest, DuplicatedKeyWireFormat) {
   with_dummy4.set_c(0);
   with_dummy4.set_dummy4(11);
   (*map_message.mutable_map_field())[key] = with_dummy4;
-  string s = map_message.SerializeAsString();
+  std::string s = map_message.SerializeAsString();
   unittest::TestRequired with_dummy5;
   with_dummy5.set_a(0);
   with_dummy5.set_b(0);
   with_dummy5.set_c(0);
   with_dummy5.set_dummy5(12);
   (*map_message.mutable_map_field())[key] = with_dummy5;
-  string both = s + map_message.SerializeAsString();
+  std::string both = s + map_message.SerializeAsString();
   // We don't expect a merge now.  The "second one wins."
   ASSERT_TRUE(map_message.ParseFromString(both));
   ASSERT_EQ(1, map_message.map_field().size());
@@ -2259,7 +2524,7 @@ TEST(GeneratedMapFieldTest, KeysValuesUnknownsWireFormat) {
   const char kValueTag = 0x10;
   const char kJunkTag = 0x20;
   for (int items = 0; items <= kMaxNumKeysAndValuesAndJunk; items++) {
-    string data = "\x0A";
+    std::string data = "\x0A";
     // Encode length of what will follow.
     data.push_back(items * 2);
     static const int kBitsOfIPerItem = 4;
@@ -2267,22 +2532,31 @@ TEST(GeneratedMapFieldTest, KeysValuesUnknownsWireFormat) {
     // Each iteration of the following is a test.  It uses i as bit vector
     // encoding the keys and values to put in the wire format.
     for (int i = 0; i < (1 << (items * kBitsOfIPerItem)); i++) {
-      string wire_format = data;
+      std::string wire_format = data;
       int expected_key = 0;
       int expected_value = 0;
       for (int k = i, j = 0; j < items; j++, k >>= kBitsOfIPerItem) {
         bool is_key = k & 0x1;
         bool is_value = !is_key && (k & 0x2);
-        wire_format.push_back(is_key ? kKeyTag :
-                              is_value ? kValueTag : kJunkTag);
+        wire_format.push_back(is_key ? kKeyTag
+                                     : is_value ? kValueTag : kJunkTag);
         char c = static_cast<char>(k & mask) >> 2;  // One char after the tag.
         wire_format.push_back(c);
         if (is_key) expected_key = static_cast<int>(c);
         if (is_value) expected_value = static_cast<int>(c);
-        ASSERT_TRUE(message.ParseFromString(wire_format));
-        ASSERT_EQ(1, message.map_int32_int32().size());
-        ASSERT_EQ(expected_key, message.map_int32_int32().begin()->first);
-        ASSERT_EQ(expected_value, message.map_int32_int32().begin()->second);
+        bool res = message.ParseFromString(wire_format);
+        bool expect_success = true;
+        // Unfortunately the old map parser accepts malformed input, the new
+        // parser accepts only correct input.
+        if (j != items - 1) expect_success = false;
+        if (expect_success) {
+          ASSERT_TRUE(res);
+          ASSERT_EQ(1, message.map_int32_int32().size());
+          ASSERT_EQ(expected_key, message.map_int32_int32().begin()->first);
+          ASSERT_EQ(expected_value, message.map_int32_int32().begin()->second);
+        } else {
+          ASSERT_FALSE(res);
+        }
       }
     }
   }
@@ -2292,7 +2566,7 @@ TEST(GeneratedMapFieldTest, DuplicatedValueWireFormat) {
   unittest::TestMap message;
 
   // Two value fields in wire format
-  string data = "\x0A\x06\x08\x01\x10\x01\x10\x02";
+  std::string data = "\x0A\x06\x08\x01\x10\x01\x10\x02";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
@@ -2303,10 +2577,11 @@ TEST(GeneratedMapFieldTest, MissedKeyWireFormat) {
   unittest::TestMap message;
 
   // No key field in wire format
-  string data = "\x0A\x02\x10\x01";
+  std::string data = "\x0A\x02\x10\x01";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
+  ASSERT_NE(message.map_int32_int32().find(0), message.map_int32_int32().end());
   EXPECT_EQ(1, message.map_int32_int32().at(0));
 }
 
@@ -2314,10 +2589,11 @@ TEST(GeneratedMapFieldTest, MissedValueWireFormat) {
   unittest::TestMap message;
 
   // No value field in wire format
-  string data = "\x0A\x02\x08\x01";
+  std::string data = "\x0A\x02\x08\x01";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
+  ASSERT_NE(message.map_int32_int32().find(1), message.map_int32_int32().end());
   EXPECT_EQ(0, message.map_int32_int32().at(1));
 }
 
@@ -2325,21 +2601,21 @@ TEST(GeneratedMapFieldTest, MissedValueTextFormat) {
   unittest::TestMap message;
 
   // No value field in text format
-  string text =
+  std::string text =
       "map_int32_foreign_message {\n"
       "  key: 1234567890\n"
       "}";
 
-  EXPECT_TRUE(google::protobuf::TextFormat::ParseFromString(text, &message));
+  EXPECT_TRUE(TextFormat::ParseFromString(text, &message));
   EXPECT_EQ(1, message.map_int32_foreign_message().size());
-  EXPECT_EQ(11, message.ByteSize());
+  EXPECT_EQ(11, message.ByteSizeLong());
 }
 
 TEST(GeneratedMapFieldTest, UnknownFieldWireFormat) {
   unittest::TestMap message;
 
   // Unknown field in wire format
-  string data = "\x0A\x06\x08\x02\x10\x03\x18\x01";
+  std::string data = "\x0A\x06\x08\x02\x10\x03\x18\x01";
 
   EXPECT_TRUE(message.ParseFromString(data));
   EXPECT_EQ(1, message.map_int32_int32().size());
@@ -2350,7 +2626,7 @@ TEST(GeneratedMapFieldTest, CorruptedWireFormat) {
   unittest::TestMap message;
 
   // corrupted data in wire format
-  string data = "\x0A\x06\x08\x02\x11\x03";
+  std::string data = "\x0A\x06\x08\x02\x11\x03";
 
   EXPECT_FALSE(message.ParseFromString(data));
 }
@@ -2369,47 +2645,68 @@ TEST(GeneratedMapFieldTest, IsInitialized) {
   EXPECT_TRUE(map_message.IsInitialized());
 }
 
-TEST(GeneratedMapFieldTest, MessagesMustMerge) {
+TEST(GeneratedMapFieldTest, SpaceUsed) {
   unittest::TestRequiredMessageMap map_message;
-  unittest::TestRequired with_dummy4;
-  with_dummy4.set_a(97);
-  with_dummy4.set_b(0);
-  with_dummy4.set_c(0);
-  with_dummy4.set_dummy4(98);
+  const size_t initial = map_message.SpaceUsed();
+  const size_t space_used_message = unittest::TestRequired().SpaceUsed();
 
-  EXPECT_TRUE(with_dummy4.IsInitialized());
-  (*map_message.mutable_map_field())[0] = with_dummy4;
-  EXPECT_TRUE(map_message.IsInitialized());
-  string s = map_message.SerializeAsString();
-
-  // Modify s so that there are two values in the entry for key 0.
-  // The first will have no value for c.  The second will have no value for a.
-  // Those are required fields.  Also, make some other little changes, to
-  // ensure we are merging the two values (because they're messages).
-  ASSERT_EQ(s.size() - 2, s[1]);  // encoding of the length of what follows
-  string encoded_val(s.data() + 4, s.data() + s.size());
-  // In s, change the encoding of c to an encoding of dummy32.
-  s[s.size() - 3] -= 8;
-  // Make encoded_val slightly different from what's in s.
-  encoded_val[encoded_val.size() - 1] += 33;  // Encode c = 33.
-  for (int i = 0; i < encoded_val.size(); i++) {
-    if (encoded_val[i] == 97) {
-      // Encode b = 91 instead of a = 97.  But this won't matter, because
-      // we also encode b = 0 right after this.  The point is to leave out
-      // a required field, and make sure the parser doesn't complain, because
-      // every required field is set after the merge of the two values.
-      encoded_val[i - 1] += 16;
-      encoded_val[i] = 91;
-    } else if (encoded_val[i] == 98) {
-      // Encode dummy5 = 99 instead of dummy4 = 98.
-      encoded_val[i - 1] += 8;  // The tag for dummy5 is 8 more.
-      encoded_val[i]++;
-      break;
-    }
+  auto& m = *map_message.mutable_map_field();
+  constexpr int kNumValues = 100;
+  for (int i = 0; i < kNumValues; ++i) {
+    m[i];
   }
 
-  s += encoded_val;            // Add the second message.
-  s[1] += encoded_val.size();  // Adjust encoded size.
+  // The exact value will depend on internal state, like collisions,
+  // so we can't predict it. But we can predict a lower bound.
+  size_t lower_bound =
+      initial + kNumValues * (space_used_message + sizeof(int32) +
+                              /* Node::next */ sizeof(void*) +
+                              /* table entry */ sizeof(void*));
+
+  EXPECT_LE(lower_bound, map_message.SpaceUsed());
+}
+
+TEST(GeneratedMapFieldTest, MessagesMustMerge) {
+  unittest::TestRequiredMessageMap map_message;
+
+  unittest::TestRequired with_dummy4;
+  with_dummy4.set_a(97);
+  with_dummy4.set_b(91);
+  with_dummy4.set_dummy4(98);
+  EXPECT_FALSE(with_dummy4.IsInitialized());
+  (*map_message.mutable_map_field())[0] = with_dummy4;
+  EXPECT_FALSE(map_message.IsInitialized());
+
+  unittest::TestRequired with_dummy5;
+  with_dummy5.set_b(0);
+  with_dummy5.set_c(33);
+  with_dummy5.set_dummy5(99);
+  EXPECT_FALSE(with_dummy5.IsInitialized());
+  (*map_message.mutable_map_field())[0] = with_dummy5;
+  EXPECT_FALSE(map_message.IsInitialized());
+
+  // The wire format of MapEntry is straightforward (*) and can be manually
+  // constructed to force merging of two uninitialized messages that would
+  // result in an initialized message.
+  //
+  // (*) http://google3/net/proto2/internal/map_test.cc?l=2433&rcl=310012028
+  std::string dummy4_s = with_dummy4.SerializePartialAsString();
+  std::string dummy5_s = with_dummy5.SerializePartialAsString();
+  int payload_size = dummy4_s.size() + dummy5_s.size();
+  // Makes sure the payload size fits into one byte.
+  ASSERT_LT(payload_size, 128);
+
+  std::string s(6, 0);
+  char* p = &s[0];
+  *p++ = WireFormatLite::MakeTag(1, WireFormatLite::WIRETYPE_LENGTH_DELIMITED);
+  // Length: 2B for key tag & val and 2B for val tag and length of the following
+  // payload.
+  *p++ = 4 + payload_size;
+  *p++ = WireFormatLite::MakeTag(1, WireFormatLite::WIRETYPE_VARINT);
+  *p++ = 0;
+  *p++ = WireFormatLite::MakeTag(2, WireFormatLite::WIRETYPE_LENGTH_DELIMITED);
+  *p++ = payload_size;
+  StrAppend(&s, dummy4_s, dummy5_s);
 
   // Test key then value then value.
   int key = 0;
@@ -2423,10 +2720,10 @@ TEST(GeneratedMapFieldTest, MessagesMustMerge) {
   EXPECT_EQ(99, map_message.map_field().find(key)->second.dummy5());
 
   // Test key then value then value then key.
-  s.push_back(s[2]);       // Copy the key's tag.
+  s.push_back(s[2]);  // Copy the key's tag.
   key = 19;
-  s.push_back(key);        // Second key is 19 instead of 0.
-  s[1] += 2;               // Adjust encoded size.
+  s.push_back(key);  // Second key is 19 instead of 0.
+  s[1] += 2;         // Adjust encoded size.
   ASSERT_TRUE(map_message.ParseFromString(s));
   ASSERT_EQ(1, map_message.map_field().size());
   ASSERT_EQ(1, map_message.map_field().count(key));
@@ -2441,19 +2738,17 @@ TEST(GeneratedMapFieldTest, MessagesMustMerge) {
 
 TEST(GeneratedMapFieldReflectionTest, SpaceUsed) {
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-    unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaReflection(&message);
 
-  EXPECT_LT(0, message.GetReflection()->SpaceUsed(message));
+  EXPECT_LT(0, message.GetReflection()->SpaceUsedLong(message));
 }
 
 TEST(GeneratedMapFieldReflectionTest, Accessors) {
   // Set every field to a unique value then go back and check all those
   // values.
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-    unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaReflection(&message);
   MapTestUtil::ExpectMapFieldsSet(message);
   reflection_tester.ExpectMapFieldsSetViaReflection(message);
@@ -2511,8 +2806,7 @@ TEST(GeneratedMapFieldReflectionTest, ClearField) {
   MapTestUtil::SetMapFields(&message);
   MapTestUtil::ExpectMapFieldsSet(message);
 
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.ClearMapFieldsViaReflection(&message);
   reflection_tester.ExpectClearViaReflection(message);
   reflection_tester.ExpectClearViaReflectionIterator(&message);
@@ -2520,8 +2814,7 @@ TEST(GeneratedMapFieldReflectionTest, ClearField) {
 
 TEST(GeneratedMapFieldReflectionTest, RemoveLast) {
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
 
   MapTestUtil::SetMapFields(&message);
   MapTestUtil::ExpectMapsSize(message, 2);
@@ -2568,8 +2861,7 @@ TEST(GeneratedMapFieldReflectionTest, ReleaseLast) {
 
 TEST(GeneratedMapFieldReflectionTest, SwapElements) {
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-    unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
 
   MapTestUtil::SetMapFields(&message);
 
@@ -2608,8 +2900,7 @@ TEST(GeneratedMapFieldReflectionTest, SwapElements) {
 
 TEST(GeneratedMapFieldReflectionTest, MutableUnknownFields) {
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-    unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.MutableUnknownFieldsOfMapFieldsViaReflection(&message);
 }
 
@@ -2664,8 +2955,7 @@ TEST(GeneratedMapFieldReflectionTest, MergeFromClearMapEntry) {
 
 TEST(GeneratedMapFieldReflectionTest, MapEntryClear) {
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-    unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.MutableUnknownFieldsOfMapFieldsViaReflection(&message);
 }
 
@@ -2686,8 +2976,7 @@ TEST(GeneratedMapFieldReflectionTest, Proto2MapEntryClear) {
 
 TEST(GeneratedMapFieldReflectionTest, SetViaMapReflection) {
   unittest::TestMap message;
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaMapReflection(&message);
   reflection_tester.ExpectMapFieldsSetViaReflection(message);
   reflection_tester.ExpectMapFieldsSetViaReflectionIterator(&message);
@@ -2707,8 +2996,7 @@ class MapFieldInDynamicMessageTest : public testing::Test {
       : pool_(DescriptorPool::generated_pool()), factory_(pool_) {}
 
   virtual void SetUp() {
-    map_descriptor_ =
-      pool_->FindMessageTypeByName("protobuf_unittest.TestMap");
+    map_descriptor_ = pool_->FindMessageTypeByName("protobuf_unittest.TestMap");
     recursive_map_descriptor_ =
         pool_->FindMessageTypeByName("protobuf_unittest.TestRecursiveMapMessage");
     ASSERT_TRUE(map_descriptor_ != NULL);
@@ -2739,7 +3027,7 @@ TEST_F(MapFieldInDynamicMessageTest, DynamicMapReflection) {
 }
 
 TEST_F(MapFieldInDynamicMessageTest, MapSpaceUsed) {
-  // Test that SpaceUsed() works properly
+  // Test that SpaceUsedLong() works properly
 
   // Since we share the implementation with generated messages, we don't need
   // to test very much here.  Just make sure it appears to be working.
@@ -2747,16 +3035,16 @@ TEST_F(MapFieldInDynamicMessageTest, MapSpaceUsed) {
   std::unique_ptr<Message> message(map_prototype_->New());
   MapReflectionTester reflection_tester(map_descriptor_);
 
-  int initial_space_used = message->SpaceUsed();
+  int initial_space_used = message->SpaceUsedLong();
 
   reflection_tester.SetMapFieldsViaReflection(message.get());
-  EXPECT_LT(initial_space_used, message->SpaceUsed());
+  EXPECT_LT(initial_space_used, message->SpaceUsedLong());
 }
 
 TEST_F(MapFieldInDynamicMessageTest, RecursiveMap) {
   TestRecursiveMapMessage from;
   (*from.mutable_a())[""];
-  string data = from.SerializeAsString();
+  std::string data = from.SerializeAsString();
   std::unique_ptr<Message> to(
       factory_.GetPrototype(recursive_map_descriptor_)->New());
   ASSERT_TRUE(to->ParseFromString(data));
@@ -2779,7 +3067,7 @@ TEST_F(MapFieldInDynamicMessageTest, MapValueReferernceValidAfterSerialize) {
   // In previous implementation, calling SerializeToString will cause syncing
   // from map to repeated field, which will invalidate the submsg we previously
   // got.
-  string data;
+  std::string data;
   message->SerializeToString(&data);
 
   const Reflection* submsg_reflection = submsg->GetReflection();
@@ -2811,7 +3099,7 @@ TEST_F(MapFieldInDynamicMessageTest, MapEntryReferernceValidAfterSerialize) {
   // In previous implementation, calling SerializeToString will cause syncing
   // from repeated field to map, which will invalidate the map_entry we
   // previously got.
-  string data;
+  std::string data;
   message->SerializeToString(&data);
 
   const Reflection* submsg_reflection = submsg->GetReflection();
@@ -2876,15 +3164,15 @@ TEST(ReflectionOpsForMapFieldTest, MapDiscardUnknownFields) {
   MapTestUtil::SetMapFields(&message);
 
   // Set some unknown fields in message.
-  message.GetReflection()->MutableUnknownFields(&message)->
-      AddVarint(123456, 654321);
+  message.GetReflection()->MutableUnknownFields(&message)->AddVarint(123456,
+                                                                     654321);
 
   // Discard them.
   ReflectionOps::DiscardUnknownFields(&message);
   MapTestUtil::ExpectMapFieldsSet(message);
 
-  EXPECT_EQ(0, message.GetReflection()->
-      GetUnknownFields(message).field_count());
+  EXPECT_EQ(0,
+            message.GetReflection()->GetUnknownFields(message).field_count());
 }
 
 TEST(ReflectionOpsForMapFieldTest, IsInitialized) {
@@ -2905,7 +3193,7 @@ TEST(ReflectionOpsForMapFieldTest, IsInitialized) {
 
 TEST(WireFormatForMapFieldTest, ParseMap) {
   unittest::TestMap source, dest;
-  string data;
+  std::string data;
 
   // Serialize using the generated code.
   MapTestUtil::SetMapFields(&source);
@@ -2924,22 +3212,22 @@ TEST(WireFormatForMapFieldTest, MapByteSize) {
   unittest::TestMap message;
   MapTestUtil::SetMapFields(&message);
 
-  EXPECT_EQ(message.ByteSize(), WireFormat::ByteSize(message));
+  EXPECT_EQ(message.ByteSizeLong(), WireFormat::ByteSize(message));
   message.Clear();
-  EXPECT_EQ(0, message.ByteSize());
+  EXPECT_EQ(0, message.ByteSizeLong());
   EXPECT_EQ(0, WireFormat::ByteSize(message));
 }
 
 TEST(WireFormatForMapFieldTest, SerializeMap) {
   unittest::TestMap message;
-  string generated_data;
-  string dynamic_data;
+  std::string generated_data;
+  std::string dynamic_data;
 
   MapTestUtil::SetMapFields(&message);
 
   // Serialize using the generated code.
   {
-    message.ByteSize();
+    message.ByteSizeLong();
     io::StringOutputStream raw_output(&generated_data);
     io::CodedOutputStream output(&raw_output);
     message.SerializeWithCachedSizes(&output);
@@ -2950,15 +3238,14 @@ TEST(WireFormatForMapFieldTest, SerializeMap) {
   {
     io::StringOutputStream raw_output(&dynamic_data);
     io::CodedOutputStream output(&raw_output);
-    int size = WireFormat::ByteSize(message);
+    size_t size = WireFormat::ByteSize(message);
     WireFormat::SerializeWithCachedSizes(message, size, &output);
     ASSERT_FALSE(output.HadError());
   }
 
-  // Should be the same.
-  // Don't use EXPECT_EQ here because we're comparing raw binary data and
-  // we really don't want it dumped to stdout on failure.
-  EXPECT_TRUE(dynamic_data == generated_data);
+  // Should parse to the same message.
+  EXPECT_TRUE(TestUtil::EqualsToSerialized(message, generated_data));
+  EXPECT_TRUE(TestUtil::EqualsToSerialized(message, dynamic_data));
 }
 
 TEST(WireFormatForMapFieldTest, SerializeMapDynamicMessage) {
@@ -2966,8 +3253,7 @@ TEST(WireFormatForMapFieldTest, SerializeMapDynamicMessage) {
   std::unique_ptr<Message> dynamic_message;
   dynamic_message.reset(
       factory.GetPrototype(unittest::TestMap::descriptor())->New());
-  MapReflectionTester reflection_tester(
-      unittest::TestMap::descriptor());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
   reflection_tester.SetMapFieldsViaReflection(dynamic_message.get());
   reflection_tester.ExpectMapFieldsSetViaReflection(*dynamic_message);
 
@@ -2975,8 +3261,8 @@ TEST(WireFormatForMapFieldTest, SerializeMapDynamicMessage) {
   MapTestUtil::SetMapFields(&generated_message);
   MapTestUtil::ExpectMapFieldsSet(generated_message);
 
-  string generated_data;
-  string dynamic_data;
+  std::string generated_data;
+  std::string dynamic_data;
 
   // Serialize.
   generated_message.SerializeToString(&generated_data);
@@ -2988,8 +3274,60 @@ TEST(WireFormatForMapFieldTest, SerializeMapDynamicMessage) {
   EXPECT_TRUE(dynamic_data.size() == generated_data.size());
 }
 
+TEST(WireFormatForMapFieldTest, MapByteSizeDynamicMessage) {
+  DynamicMessageFactory factory;
+  std::unique_ptr<Message> dynamic_message;
+  dynamic_message.reset(
+      factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
+  reflection_tester.SetMapFieldsViaReflection(dynamic_message.get());
+  reflection_tester.ExpectMapFieldsSetViaReflection(*dynamic_message);
+  std::string expected_serialized_data;
+  dynamic_message->SerializeToString(&expected_serialized_data);
+  int expected_size = expected_serialized_data.size();
+  EXPECT_EQ(dynamic_message->ByteSizeLong(), expected_size);
+
+  std::unique_ptr<Message> message2;
+  message2.reset(factory.GetPrototype(unittest::TestMap::descriptor())->New());
+  reflection_tester.SetMapFieldsViaMapReflection(message2.get());
+
+  const FieldDescriptor* field =
+      unittest::TestMap::descriptor()->FindFieldByName("map_int32_int32");
+  const Reflection* reflection = dynamic_message->GetReflection();
+
+  // Force the map field to mark with STATE_MODIFIED_REPEATED
+  reflection->RemoveLast(dynamic_message.get(), field);
+  dynamic_message->MergeFrom(*message2);
+  dynamic_message->MergeFrom(*message2);
+  // The map field is marked as STATE_MODIFIED_REPEATED, ByteSizeLong() will use
+  // repeated field which have duplicate keys to calculate.
+  size_t duplicate_size = dynamic_message->ByteSizeLong();
+  EXPECT_TRUE(duplicate_size > expected_size);
+  std::string duplicate_serialized_data;
+  dynamic_message->SerializeToString(&duplicate_serialized_data);
+  EXPECT_EQ(dynamic_message->ByteSizeLong(), duplicate_serialized_data.size());
+
+  // Force the map field to mark with map CLEAN
+  EXPECT_EQ(reflection_tester.MapSize(*dynamic_message, "map_int32_int32"), 2);
+  // The map field is marked as CLEAN, ByteSizeLong() will use map which do not
+  // have duplicate keys to calculate.
+  int size = dynamic_message->ByteSizeLong();
+  EXPECT_EQ(expected_size, size);
+
+  // Protobuf used to have a bug for serialize when map it marked CLEAN. It used
+  // repeated field to calculate ByteSizeLong but use map to serialize the real
+  // data, thus the ByteSizeLong may bigger than real serialized size. A crash
+  // might be happen at SerializeToString(). Or an "unexpected end group"
+  // warning was raised at parse back if user use SerializeWithCachedSizes()
+  // which avoids size check at serialize.
+  std::string serialized_data;
+  dynamic_message->SerializeToString(&serialized_data);
+  EXPECT_EQ(serialized_data, expected_serialized_data);
+  dynamic_message->ParseFromString(serialized_data);
+}
+
 TEST(WireFormatForMapFieldTest, MapParseHelpers) {
-  string data;
+  std::string data;
 
   {
     // Set up.
@@ -3016,7 +3354,7 @@ TEST(WireFormatForMapFieldTest, MapParseHelpers) {
 
   {
     // Test ParseFromBoundedZeroCopyStream.
-    string data_with_junk(data);
+    std::string data_with_junk(data);
     data_with_junk.append("some junk on the end");
     io::ArrayInputStream stream(data_with_junk.data(), data_with_junk.size());
     protobuf_unittest::TestMap message;
@@ -3030,18 +3368,18 @@ TEST(WireFormatForMapFieldTest, MapParseHelpers) {
     io::ArrayInputStream stream(data.data(), data.size());
     protobuf_unittest::TestAllTypes message;
     EXPECT_FALSE(
-      message.ParseFromBoundedZeroCopyStream(&stream, data.size() + 1));
+        message.ParseFromBoundedZeroCopyStream(&stream, data.size() + 1));
   }
 }
 
 // Deterministic Serialization Test ==========================================
 
 template <typename T>
-static string DeterministicSerializationWithSerializePartialToCodedStream(
+static std::string DeterministicSerializationWithSerializePartialToCodedStream(
     const T& t) {
-  const int size = t.ByteSize();
-  string result(size, '\0');
-  io::ArrayOutputStream array_stream(string_as_array(&result), size);
+  const size_t size = t.ByteSizeLong();
+  std::string result(size, '\0');
+  io::ArrayOutputStream array_stream(::google::protobuf::string_as_array(&result), size);
   io::CodedOutputStream output_stream(&array_stream);
   output_stream.SetSerializationDeterministic(true);
   t.SerializePartialToCodedStream(&output_stream);
@@ -3051,10 +3389,11 @@ static string DeterministicSerializationWithSerializePartialToCodedStream(
 }
 
 template <typename T>
-static string DeterministicSerializationWithSerializeToCodedStream(const T& t) {
-  const int size = t.ByteSize();
-  string result(size, '\0');
-  io::ArrayOutputStream array_stream(string_as_array(&result), size);
+static std::string DeterministicSerializationWithSerializeToCodedStream(
+    const T& t) {
+  const size_t size = t.ByteSizeLong();
+  std::string result(size, '\0');
+  io::ArrayOutputStream array_stream(::google::protobuf::string_as_array(&result), size);
   io::CodedOutputStream output_stream(&array_stream);
   output_stream.SetSerializationDeterministic(true);
   t.SerializeToCodedStream(&output_stream);
@@ -3064,38 +3403,26 @@ static string DeterministicSerializationWithSerializeToCodedStream(const T& t) {
 }
 
 template <typename T>
-static string DeterministicSerialization(const T& t) {
-  const int size = t.ByteSize();
-  string result(size, '\0');
-  io::ArrayOutputStream array_stream(string_as_array(&result), size);
-  io::CodedOutputStream output_stream(&array_stream);
-  output_stream.SetSerializationDeterministic(true);
-  t.SerializeWithCachedSizes(&output_stream);
-  EXPECT_FALSE(output_stream.HadError());
-  EXPECT_EQ(size, output_stream.ByteCount());
+static std::string DeterministicSerialization(const T& t) {
+  const size_t size = t.ByteSizeLong();
+  std::string result(size, '\0');
+  io::ArrayOutputStream array_stream(::google::protobuf::string_as_array(&result), size);
+  {
+    io::CodedOutputStream output_stream(&array_stream);
+    output_stream.SetSerializationDeterministic(true);
+    t.SerializeWithCachedSizes(&output_stream);
+    EXPECT_FALSE(output_stream.HadError());
+    EXPECT_EQ(size, output_stream.ByteCount());
+  }
   EXPECT_EQ(result, DeterministicSerializationWithSerializeToCodedStream(t));
   EXPECT_EQ(result,
             DeterministicSerializationWithSerializePartialToCodedStream(t));
   return result;
 }
 
-// Helper to test the serialization of the first arg against a golden file.
-static void TestDeterministicSerialization(const protobuf_unittest::TestMaps& t,
-                                           const string& filename) {
-  string expected;
-  GOOGLE_CHECK_OK(File::GetContents(
-      TestSourceDir() + "/google/protobuf/testdata/" + filename,
-      &expected, true));
-  const string actual = DeterministicSerialization(t);
-  EXPECT_EQ(expected, actual);
-  protobuf_unittest::TestMaps u;
-  EXPECT_TRUE(u.ParseFromString(actual));
-  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(u, t));
-}
-
 // Helper for MapSerializationTest.  Return a 7-bit ASCII string.
-static string ConstructKey(uint64 n) {
-  string s(n % static_cast<uint64>(9), '\0');
+static std::string ConstructKey(uint64 n) {
+  std::string s(n % static_cast<uint64>(9), '\0');
   if (s.empty()) {
     return StrCat(n);
   } else {
@@ -3121,7 +3448,7 @@ TEST(MapSerializationTest, Deterministic) {
     const int64 i64 = static_cast<int64>(frog);
     const uint64 u64 = frog * static_cast<uint64>(187321);
     const bool b = i32 > 0;
-    const string s = ConstructKey(frog);
+    const std::string s = ConstructKey(frog);
     (*inner.mutable_m())[i] = i32;
     (*t.mutable_m_int32())[i32] = (*t.mutable_m_sint32())[i32] =
         (*t.mutable_m_sfixed32())[i32] = inner;
@@ -3131,26 +3458,36 @@ TEST(MapSerializationTest, Deterministic) {
     (*t.mutable_m_uint64())[u64] = (*t.mutable_m_fixed64())[u64] = inner;
     (*t.mutable_m_bool())[b] = inner;
     (*t.mutable_m_string())[s] = inner;
-    (*t.mutable_m_string())[s + string(1 << (u32 % static_cast<uint32>(9)),
-                                       b)] = inner;
+    (*t.mutable_m_string())[s + std::string(1 << (u32 % static_cast<uint32>(9)),
+                                            b)] = inner;
     inner.mutable_m()->erase(i);
     frog = frog * multiplier + i;
     frog ^= (frog >> 41);
   }
-  TestDeterministicSerialization(t, "golden_message_maps");
+
+  // Verifies if two consecutive calls to deterministic serialization produce
+  // the same bytes. Deterministic serialization means the same serialization
+  // bytes in the same binary.
+  const std::string s1 = DeterministicSerialization(t);
+  const std::string s2 = DeterministicSerialization(t);
+  EXPECT_EQ(s1, s2);
+
+  protobuf_unittest::TestMaps u;
+  EXPECT_TRUE(u.ParseFromString(s1));
+  EXPECT_TRUE(util::MessageDifferencer::Equals(u, t));
 }
 
 TEST(MapSerializationTest, DeterministicSubmessage) {
   protobuf_unittest::TestSubmessageMaps p;
   protobuf_unittest::TestMaps t;
-  const string filename = "golden_message_maps";
-  string golden;
+  const std::string filename = "golden_message_maps";
+  std::string golden;
   GOOGLE_CHECK_OK(File::GetContents(
-      TestSourceDir() + "/google/protobuf/testdata/" + filename,
+      TestUtil::GetTestDataPath("net/proto2/internal/testdata/" + filename),
       &golden, true));
   t.ParseFromString(golden);
   *(p.mutable_m()) = t;
-  std::vector<string> v;
+  std::vector<std::string> v;
   // Use multiple attempts to increase the chance of a failure if something is
   // buggy.  For example, each separate copy of a map might use a different
   // randomly-chosen hash function.
@@ -3167,7 +3504,7 @@ TEST(TextFormatMapTest, SerializeAndParse) {
   unittest::TestMap source;
   unittest::TestMap dest;
   MapTestUtil::SetMapFields(&source);
-  string output;
+  std::string output;
 
   // Test compact ASCII
   TextFormat::Printer printer;
@@ -3177,18 +3514,35 @@ TEST(TextFormatMapTest, SerializeAndParse) {
   MapTestUtil::ExpectMapFieldsSet(dest);
 }
 
+TEST(TextFormatMapTest, DynamicMessage) {
+  TestMap prototype;
+  DynamicMessageFactory factory;
+  std::unique_ptr<Message> message(
+      factory.GetPrototype(prototype.GetDescriptor())->New());
+  MapReflectionTester tester(message->GetDescriptor());
+  tester.SetMapFieldsViaReflection(message.get());
+
+  std::string expected_text;
+  GOOGLE_CHECK_OK(
+      File::GetContents(TestUtil::GetTestDataPath("net/proto2/internal/"
+                                                  "testdata/map_test_data.txt"),
+                        &expected_text, true));
+
+  EXPECT_EQ(message->DebugString(), expected_text);
+}
+
 TEST(TextFormatMapTest, Sorted) {
   unittest::TestMap message;
   MapReflectionTester tester(message.GetDescriptor());
   tester.SetMapFieldsViaReflection(&message);
 
-  string expected_text;
-  GOOGLE_CHECK_OK(File::GetContents(
-      TestSourceDir() +
-          "/google/protobuf/"
-          "testdata/map_test_data.txt",
-      &expected_text, true));
+  std::string expected_text;
+  GOOGLE_CHECK_OK(
+      File::GetContents(TestUtil::GetTestDataPath("net/proto2/internal/"
+                                                  "testdata/map_test_data.txt"),
+                        &expected_text, true));
 
+  CleanStringLineEndings(&expected_text, false);
   EXPECT_EQ(message.DebugString(), expected_text);
 
   // Test again on the reverse order.
@@ -3199,15 +3553,86 @@ TEST(TextFormatMapTest, Sorted) {
 }
 
 TEST(TextFormatMapTest, ParseCorruptedString) {
-  string serialized_message;
-  GOOGLE_CHECK_OK(File::GetContents(
-      TestSourceDir() +
-          "/google/protobuf/testdata/golden_message_maps",
-      &serialized_message, true));
+  std::string serialized_message;
+  GOOGLE_CHECK_OK(
+      File::GetContents(TestUtil::GetTestDataPath(
+                            "net/proto2/internal/testdata/golden_message_maps"),
+                        &serialized_message, true));
   protobuf_unittest::TestMaps message;
   GOOGLE_CHECK(message.ParseFromString(serialized_message));
   TestParseCorruptedString<protobuf_unittest::TestMaps, true>(message);
   TestParseCorruptedString<protobuf_unittest::TestMaps, false>(message);
+}
+
+// Previously, serializing to text format will disable iterator from generated
+// API. Now, the iterator can be still used even after serializing to text
+// format.
+TEST(TextFormatMapTest, NoDisableIterator) {
+  unittest::TestMap source;
+  (*source.mutable_map_int32_int32())[1] = 1;
+
+  // Get iterator.
+  Map<int32, int32>::iterator iter = source.mutable_map_int32_int32()->find(1);
+
+  // Serialize message to text format, which will invalidate the previous
+  // iterator previously.
+  std::string output;
+  TextFormat::Printer printer;
+  printer.PrintToString(source, &output);
+
+  // Modify map via the iterator (invalidated in previous implementation.).
+  iter->second = 2;
+
+  // In previous implementation, the new change won't be reflected in text
+  // format, because the previous iterator has been invalidated.
+  output.clear();
+  printer.PrintToString(source, &output);
+  std::string expected =
+      "map_int32_int32 {\n"
+      "  key: 1\n"
+      "  value: 2\n"
+      "}\n";
+  EXPECT_EQ(output, expected);
+}
+
+// Previously, serializing to text format will disable iterator from reflection
+// API.
+TEST(TextFormatMapTest, NoDisableReflectionIterator) {
+  unittest::TestMap source;
+  (*source.mutable_map_int32_int32())[1] = 1;
+
+  // Get iterator. This will also sync internal repeated field with map inside
+  // of MapField.
+  const Reflection* reflection = source.GetReflection();
+  const FieldDescriptor* field_desc =
+      source.GetDescriptor()->FindFieldByName("map_int32_int32");
+  RepeatedPtrField<Message>* map_field =
+      reflection->MutableRepeatedPtrField<Message>(&source, field_desc);
+  RepeatedPtrField<Message>::iterator iter = map_field->begin();
+
+  // Serialize message to text format, which will invalidate the previous
+  // iterator previously.
+  std::string output;
+  TextFormat::Printer printer;
+  printer.PrintToString(source, &output);
+
+  // Modify map via the iterator (invalidated in previous implementation.).
+  const Reflection* map_entry_reflection = iter->GetReflection();
+  const FieldDescriptor* value_field_desc =
+      iter->GetDescriptor()->FindFieldByName("value");
+  map_entry_reflection->SetInt32(&(*iter), value_field_desc, 2);
+  GOOGLE_LOG(INFO) << iter->DebugString();
+
+  // In previous implementation, the new change won't be reflected in text
+  // format, because the previous iterator has been invalidated.
+  output.clear();
+  printer.PrintToString(source, &output);
+  std::string expected =
+      "map_int32_int32 {\n"
+      "  key: 1\n"
+      "  value: 2\n"
+      "}\n";
+  EXPECT_EQ(output, expected);
 }
 
 
@@ -3219,7 +3644,7 @@ TEST(ArenaTest, ParsingAndSerializingNoHeapAllocation) {
   options.initial_block = &arena_block[0];
   options.initial_block_size = arena_block.size();
   Arena arena(options);
-  string data;
+  std::string data;
   data.reserve(128 * 1024);
 
   {
@@ -3241,7 +3666,7 @@ TEST(ArenaTest, ParsingAndSerializingNoHeapAllocation) {
 // Use text format parsing and serializing to test reflection api.
 TEST(ArenaTest, ReflectionInTextFormat) {
   Arena arena;
-  string data;
+  std::string data;
 
   TextFormat::Printer printer;
   TextFormat::Parser parser;
@@ -3263,7 +3688,7 @@ TEST(ArenaTest, StringMapNoLeak) {
   Arena arena;
   unittest::TestArenaMap* message =
       Arena::CreateMessage<unittest::TestArenaMap>(&arena);
-  string data;
+  std::string data;
   // String with length less than 16 will not be allocated from heap.
   int original_capacity = data.capacity();
   while (data.capacity() <= original_capacity) {
@@ -3287,6 +3712,21 @@ TEST(ArenaTest, IsInitialized) {
   unittest::TestArenaMap* message =
       Arena::CreateMessage<unittest::TestArenaMap>(&arena);
   EXPECT_EQ(0, (*message->mutable_map_int32_int32())[0]);
+}
+
+TEST(ArenaTest, DynamicMapFieldOnArena) {
+  Arena arena;
+  unittest::TestMap message2;
+
+  DynamicMessageFactory factory;
+  Message* message1 =
+      factory.GetPrototype(unittest::TestMap::descriptor())->New(&arena);
+  MapReflectionTester reflection_tester(unittest::TestMap::descriptor());
+  reflection_tester.SetMapFieldsViaReflection(message1);
+  reflection_tester.ExpectMapFieldsSetViaReflection(*message1);
+  reflection_tester.ExpectMapFieldsSetViaReflectionIterator(message1);
+  message2.CopyFrom(*message1);
+  MapTestUtil::ExpectMapFieldsSet(message2);
 }
 
 TEST(MoveTest, MoveConstructorWorks) {
@@ -3325,6 +3765,8 @@ TEST(MoveTest, MoveAssignmentWorks) {
   EXPECT_EQ(nested_msg43_ptr, &moved_to_map[43].optional_nested_message());
 }
 
+
+}  // namespace
 }  // namespace internal
 }  // namespace protobuf
 }  // namespace google

@@ -187,6 +187,25 @@ class FieldDescriptor
             $this->getMessageType()->getClass() === "Google\Protobuf\Timestamp";
     }
 
+    public function isWrapperType()
+    {
+        if ($this->getType() == GPBType::MESSAGE) {
+            $class = $this->getMessageType()->getClass();
+            return in_array($class, [
+                "Google\Protobuf\DoubleValue",
+                "Google\Protobuf\FloatValue",
+                "Google\Protobuf\Int64Value",
+                "Google\Protobuf\UInt64Value",
+                "Google\Protobuf\Int32Value",
+                "Google\Protobuf\UInt32Value",
+                "Google\Protobuf\BoolValue",
+                "Google\Protobuf\StringValue",
+                "Google\Protobuf\BytesValue",
+            ]);
+        }
+        return false;
+    }
+
     private static function isTypePackable($field_type)
     {
         return ($field_type !== GPBType::STRING  &&
@@ -210,7 +229,17 @@ class FieldDescriptor
         }
 
         $oneof_index = $proto->hasOneofIndex() ? $proto->getOneofIndex() : -1;
-        $packed = false;
+        // TODO: once proto2 is supported, this default should be false
+        // for proto2.
+        if ($proto->getLabel() === GPBLabel::REPEATED &&
+            $proto->getType() !== GPBType::MESSAGE &&
+            $proto->getType() !== GPBType::GROUP &&
+            $proto->getType() !== GPBType::STRING &&
+            $proto->getType() !== GPBType::BYTES) {
+          $packed = true;
+        } else {
+          $packed = false;
+        }
         $options = $proto->getOptions();
         if ($options !== null) {
             $packed = $options->getPacked();

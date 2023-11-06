@@ -13,13 +13,17 @@ generate Java code for your .proto files:
     $ protoc --java_out=${OUTPUT_DIR} path/to/your/proto/file
 
 Include the generated Java files in your project and add a dependency on the
-protobuf Java runtime. If you are using Maven, use the following:
+protobuf Java runtime.
+
+### Maven
+
+If you are using Maven, use the following:
 
 ```xml
 <dependency>
   <groupId>com.google.protobuf</groupId>
   <artifactId>protobuf-java</artifactId>
-  <version>3.5.1</version>
+  <version>3.11.0</version>
 </dependency>
 ```
 
@@ -33,9 +37,17 @@ protobuf-java-util package:
 <dependency>
   <groupId>com.google.protobuf</groupId>
   <artifactId>protobuf-java-util</artifactId>
-  <version>3.5.1</version>
+  <version>3.11.0</version>
 </dependency>
 ```
+
+### Gradle
+
+If you are using Gradle, add the following to your `build.gradle` file's dependencies:
+```
+    implementation 'com.google.protobuf:protobuf-java:3.11.0'
+```
+Again, be sure to check that the version number matches (or is newer than) the version number of protoc that you are using.
 
 ### Use Java Protocol Buffers on Android
 
@@ -56,7 +68,7 @@ how to use them.
 
 Most users should follow the instructions above to use protobuf Java runtime.
 If you are contributing code to protobuf or want to use a protobuf version
-that hasn't been officially released yet, you can folllow the instructions
+that hasn't been officially released yet, you can follow the instructions
 below to build protobuf from source code.
 
 ### Build from Source - With Maven
@@ -134,7 +146,7 @@ library (without the util package).
   are guaranteed for minor version releases if the user follows the guideline
   described in this section.
 
-* Protobuf major version releases may also be backwards-compatbile with the
+* Protobuf major version releases may also be backwards-compatible with the
   last release of the previous major version. See the release notice for more
   details.
 

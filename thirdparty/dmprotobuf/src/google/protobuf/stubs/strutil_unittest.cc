@@ -50,18 +50,18 @@ namespace {
 
 TEST(StringUtilityTest, ImmuneToLocales) {
   // Remember the old locale.
-  char* old_locale_cstr = setlocale(LC_NUMERIC, NULL);
-  ASSERT_TRUE(old_locale_cstr != NULL);
-  string old_locale = old_locale_cstr;
+  char* old_locale_cstr = setlocale(LC_NUMERIC, nullptr);
+  ASSERT_TRUE(old_locale_cstr != nullptr);
+  std::string old_locale = old_locale_cstr;
 
   // Set the locale to "C".
-  ASSERT_TRUE(setlocale(LC_NUMERIC, "C") != NULL);
+  ASSERT_TRUE(setlocale(LC_NUMERIC, "C") != nullptr);
 
   EXPECT_EQ("1.5", SimpleDtoa(1.5));
   EXPECT_EQ("1.5", SimpleFtoa(1.5));
 
-  if (setlocale(LC_NUMERIC, "es_ES") == NULL &&
-      setlocale(LC_NUMERIC, "es_ES.utf8") == NULL) {
+  if (setlocale(LC_NUMERIC, "es_ES") == nullptr &&
+      setlocale(LC_NUMERIC, "es_ES.utf8") == nullptr) {
     // Some systems may not have the desired locale available.
     GOOGLE_LOG(WARNING)
       << "Couldn't set locale to es_ES.  Skipping this test.";
@@ -442,7 +442,7 @@ TEST(Base64, EscapeAndUnescape) {
     char decode_buffer[100];
     int decode_length;
     int cypher_length;
-    string decode_str;
+    std::string decode_str;
 
     const unsigned char* unsigned_plaintext =
       reinterpret_cast<const unsigned char*>(base64_tests[i].plaintext);
@@ -491,13 +491,13 @@ TEST(Base64, EscapeAndUnescape) {
     EXPECT_EQ(plaintext, decode_str);
 
     // Let's try with a pre-populated string.
-    string encoded("this junk should be ignored");
-    Base64Escape(string(base64_tests[i].plaintext,
-                        base64_tests[i].plain_length),
-                 &encoded);
-    EXPECT_EQ(encoded, string(encode_buffer, cypher_length));
+    std::string encoded("this junk should be ignored");
+    Base64Escape(
+        std::string(base64_tests[i].plaintext, base64_tests[i].plain_length),
+        &encoded);
+    EXPECT_EQ(encoded, std::string(encode_buffer, cypher_length));
 
-    string decoded("this junk should be ignored");
+    std::string decoded("this junk should be ignored");
     EXPECT_TRUE(Base64Unescape(
         StringPiece(encode_buffer, cypher_length), &decoded));
     EXPECT_EQ(decoded.size(), base64_tests[i].plain_length);
@@ -514,7 +514,7 @@ TEST(Base64, EscapeAndUnescape) {
 
       // Try chopping off the equals sign(s) entirely.  The decoder
       // should still be okay with this.
-      string decoded2("this junk should also be ignored");
+      std::string decoded2("this junk should also be ignored");
       *first_equals = '\0';
       EXPECT_TRUE(Base64Unescape(
           StringPiece(encode_buffer, first_equals - encode_buffer), &decoded2));
@@ -730,7 +730,7 @@ TEST(Base64, EscapeAndUnescape) {
     EXPECT_STREQ(encode_buffer, websafe);
 
     // Let's try the (other) string version of the encoder
-    string plain(base64_tests[i].plaintext, base64_tests[i].plain_length);
+    std::string plain(base64_tests[i].plaintext, base64_tests[i].plain_length);
     encoded = "this junk should be ignored";
     WebSafeBase64Escape(plain, &encoded);
     EXPECT_EQ(encoded.size(), cypher_length);
@@ -798,12 +798,99 @@ TEST(Base64, EscapeAndUnescape) {
   // Verify the behavior when decoding bad data
   {
     const char* bad_data = "ab-/";
-    string buf;
+    std::string buf;
     EXPECT_FALSE(Base64Unescape(StringPiece(bad_data), &buf));
     EXPECT_TRUE(!WebSafeBase64Unescape(bad_data, &buf));
     EXPECT_TRUE(buf.empty());
   }
 }
+
+// Test StrCat of ints and longs of various sizes and signdedness.
+TEST(StrCat, Ints) {
+  const short s = -1;  // NOLINT(runtime/int)
+  const uint16_t us = 2;
+  const int i = -3;
+  const unsigned int ui = 4;
+  const long l = -5;                 // NOLINT(runtime/int)
+  const unsigned long ul = 6;        // NOLINT(runtime/int)
+  const long long ll = -7;           // NOLINT(runtime/int)
+  const unsigned long long ull = 8;  // NOLINT(runtime/int)
+  const ptrdiff_t ptrdiff = -9;
+  const size_t size = 10;
+  const intptr_t intptr = -12;
+  const uintptr_t uintptr = 13;
+  std::string answer;
+  answer = StrCat(s, us);
+  EXPECT_EQ(answer, "-12");
+  answer = StrCat(i, ui);
+  EXPECT_EQ(answer, "-34");
+  answer = StrCat(l, ul);
+  EXPECT_EQ(answer, "-56");
+  answer = StrCat(ll, ull);
+  EXPECT_EQ(answer, "-78");
+  answer = StrCat(ptrdiff, size);
+  EXPECT_EQ(answer, "-910");
+  answer = StrCat(ptrdiff, intptr);
+  EXPECT_EQ(answer, "-9-12");
+  answer = StrCat(uintptr, 0);
+  EXPECT_EQ(answer, "130");
+}
+
+class ReplaceChars
+    : public ::testing::TestWithParam<
+          std::tuple<std::string, std::string, const char*, char>> {};
+
+TEST_P(ReplaceChars, ReplacesAllOccurencesOfAnyCharInReplaceWithAReplaceChar) {
+  std::string expected = std::get<0>(GetParam());
+  std::string string_to_replace_in = std::get<1>(GetParam());
+  const char* what_to_replace = std::get<2>(GetParam());
+  char replacement = std::get<3>(GetParam());
+  ReplaceCharacters(&string_to_replace_in, what_to_replace, replacement);
+  ASSERT_EQ(expected, string_to_replace_in);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    Replace, ReplaceChars,
+    ::testing::Values(
+        std::make_tuple("", "", "", '_'),    // empty string should remain empty
+        std::make_tuple(" ", " ", "", '_'),  // no replacement string
+        std::make_tuple(" ", " ", "_-abcedf",
+                        '*'),  // replacement character not in string
+        std::make_tuple("replace", "Replace", "R",
+                        'r'),  // replace one character
+        std::make_tuple("not_spaces__", "not\nspaces\t ", " \t\r\n",
+                        '_'),  // replace some special characters
+        std::make_tuple("c++", "cxx", "x",
+                        '+'),  // same character multiple times
+        std::make_tuple("qvvvvvng v T", "queueing a T", "aeiou",
+                        'v')));  // replace all voewls
+
+class StripWs
+    : public ::testing::TestWithParam<std::tuple<std::string, std::string>> {};
+
+TEST_P(StripWs, AlwaysStripsLeadingAndTrailingWhitespace) {
+  std::string expected = std::get<0>(GetParam());
+  std::string string_to_strip = std::get<1>(GetParam());
+  StripWhitespace(&string_to_strip);
+  ASSERT_EQ(expected, string_to_strip);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    Strip, StripWs,
+    ::testing::Values(
+        std::make_tuple("", ""),   // empty string should remain empty
+        std::make_tuple("", " "),  // only ws should become empty
+        std::make_tuple("no whitespace",
+                        " no whitespace"),  // leading ws removed
+        std::make_tuple("no whitespace",
+                        "no whitespace "),  // trailing ws removed
+        std::make_tuple("no whitespace",
+                        " no whitespace "),  // same nb. of leading and trailing
+        std::make_tuple(
+            "no whitespace",
+            "  no whitespace "),  // different nb. of leading/trailing
+        std::make_tuple("no whitespace",
+                        " no whitespace  ")));  // more trailing than leading
 
 }  // anonymous namespace
 }  // namespace protobuf

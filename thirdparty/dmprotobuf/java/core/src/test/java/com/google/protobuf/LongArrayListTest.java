@@ -45,10 +45,8 @@ import junit.framework.TestCase;
  */
 public class LongArrayListTest extends TestCase {
 
-  private static final LongArrayList UNARY_LIST =
-      newImmutableLongArrayList(1);
-  private static final LongArrayList TERTIARY_LIST =
-      newImmutableLongArrayList(1, 2, 3);
+  private static final LongArrayList UNARY_LIST = newImmutableLongArrayList(1);
+  private static final LongArrayList TERTIARY_LIST = newImmutableLongArrayList(1, 2, 3);
 
   private LongArrayList list;
 
@@ -141,6 +139,68 @@ public class LongArrayListTest extends TestCase {
     }
   }
 
+  public void testIndexOf_nullElement() {
+    assertEquals(-1, TERTIARY_LIST.indexOf(null));
+  }
+
+  public void testIndexOf_incompatibleElementType() {
+    assertEquals(-1, TERTIARY_LIST.indexOf(new Object()));
+  }
+
+  public void testIndexOf_notInList() {
+    assertEquals(-1, UNARY_LIST.indexOf(2L));
+  }
+
+  public void testIndexOf_notInListWithDuplicates() {
+    LongArrayList listWithDupes = newImmutableLongArrayList(1L, 1L);
+    assertEquals(-1, listWithDupes.indexOf(2L));
+  }
+
+  public void testIndexOf_inList() {
+    assertEquals(1, TERTIARY_LIST.indexOf(2L));
+  }
+
+  public void testIndexOf_inListWithDuplicates_matchAtHead() {
+    LongArrayList listWithDupes = newImmutableLongArrayList(1L, 1L, 2L);
+    assertEquals(0, listWithDupes.indexOf(1L));
+  }
+
+  public void testIndexOf_inListWithDuplicates_matchMidList() {
+    LongArrayList listWithDupes = newImmutableLongArrayList(2L, 1L, 1L, 2L);
+    assertEquals(1, listWithDupes.indexOf(1L));
+  }
+
+  public void testContains_nullElement() {
+    assertEquals(false, TERTIARY_LIST.contains(null));
+  }
+
+  public void testContains_incompatibleElementType() {
+    assertEquals(false, TERTIARY_LIST.contains(new Object()));
+  }
+
+  public void testContains_notInList() {
+    assertEquals(false, UNARY_LIST.contains(2L));
+  }
+
+  public void testContains_notInListWithDuplicates() {
+    LongArrayList listWithDupes = newImmutableLongArrayList(1L, 1L);
+    assertEquals(false, listWithDupes.contains(2L));
+  }
+
+  public void testContains_inList() {
+    assertEquals(true, TERTIARY_LIST.contains(2L));
+  }
+
+  public void testContains_inListWithDuplicates_matchAtHead() {
+    LongArrayList listWithDupes = newImmutableLongArrayList(1L, 1L, 2L);
+    assertEquals(true, listWithDupes.contains(1L));
+  }
+
+  public void testContains_inListWithDuplicates_matchMidList() {
+    LongArrayList listWithDupes = newImmutableLongArrayList(2L, 1L, 1L, 2L);
+    assertEquals(true, listWithDupes.contains(1L));
+  }
+
   public void testSize() {
     assertEquals(0, LongArrayList.emptyList().size());
     assertEquals(1, UNARY_LIST.size());
@@ -225,9 +285,7 @@ public class LongArrayListTest extends TestCase {
     for (int i = 0; i < 6; i++) {
       list.add(Long.valueOf(5 + i));
     }
-    assertEquals(
-        asList(0L, 1L, 4L, 2L, 3L, 5L, 6L, 7L, 8L, 9L, 10L),
-        list);
+    assertEquals(asList(0L, 1L, 4L, 2L, 3L, 5L, 6L, 7L, 8L, 9L, 10L), list);
 
     try {
       list.add(-1, 5L);
@@ -270,6 +328,13 @@ public class LongArrayListTest extends TestCase {
     assertFalse(list.addAll(LongArrayList.emptyList()));
   }
 
+  public void testEquals() {
+    LongArrayList list1 = new LongArrayList();
+    LongArrayList list2 = new LongArrayList();
+
+    assertEquals(list1, list2);
+  }
+
   public void testRemove() {
     list.addAll(TERTIARY_LIST);
     assertEquals(1L, (long) list.remove(0));
@@ -298,11 +363,20 @@ public class LongArrayListTest extends TestCase {
     }
   }
 
-  public void testRemoveEndOfCapacity() {
+  public void testRemoveEnd_listAtCapacity() {
     LongList toRemove = LongArrayList.emptyList().mutableCopyWithCapacity(1);
     toRemove.addLong(3);
     toRemove.remove(0);
     assertEquals(0, toRemove.size());
+  }
+
+  public void testRemove_listAtCapacity() {
+    LongList toRemove = LongArrayList.emptyList().mutableCopyWithCapacity(2);
+    toRemove.addLong(3);
+    toRemove.addLong(4);
+    toRemove.remove(0);
+    assertEquals(1, toRemove.size());
+    assertEquals(4L, (long) toRemove.get(0));
   }
 
   public void testSublistRemoveEndOfCapacity() {
@@ -312,7 +386,7 @@ public class LongArrayListTest extends TestCase {
     assertEquals(0, toRemove.size());
   }
 
-  private void assertImmutable(LongArrayList list) {
+  private void assertImmutable(LongList list) {
     if (list.contains(1L)) {
       throw new RuntimeException("Cannot test the immutability of lists that contain 1.");
     }

@@ -338,9 +338,9 @@ class GPBUtil
 
         $package = $file_proto->getPackage();
         if ($package === "") {
-            $fullname = "." . $message_name_without_package;
+            $fullname = $message_name_without_package;
         } else {
-            $fullname = "." . $package . "." . $message_name_without_package;
+            $fullname = $package . "." . $message_name_without_package;
         }
 
         $class_name_without_package =
@@ -405,7 +405,7 @@ class GPBUtil
 
     public static function parseTimestamp($timestamp)
     {
-        // prevent parsing timestamps containing with the non-existant year "0000"
+        // prevent parsing timestamps containing with the non-existent year "0000"
         // DateTime::createFromFormat parses without failing but as a nonsensical date
         if (substr($timestamp, 0, 4) === "0000") {
             throw new \Exception("Year cannot be zero.");
@@ -438,8 +438,8 @@ class GPBUtil
                 $nanoseconds = intval($nanoseconds);
 
                 // remove the nanoseconds and preceding period from the timestamp
-                $date = substr($timestamp, 0, $periodIndex - 1);
-                $timezone = substr($timestamp, $periodIndex + $nanosecondsLength);
+                $date = substr($timestamp, 0, $periodIndex);
+                $timezone = substr($timestamp, $periodIndex + $nanosecondsLength + 1);
                 $timestamp = $date.$timezone;
             }
         }
@@ -504,22 +504,37 @@ class GPBUtil
 
     public static function formatDuration($value)
     {
-        if (bccomp($value->getSeconds(), "315576000001") != -1) {
-          throw new GPBDecodeException("Duration number too large.");
+        if (bccomp($value->getSeconds(), '315576000001') != -1) {
+            throw new GPBDecodeException('Duration number too large.');
         }
-        if (bccomp($value->getSeconds(), "-315576000001") != 1) {
-          throw new GPBDecodeException("Duration number too small.");
+        if (bccomp($value->getSeconds(), '-315576000001') != 1) {
+            throw new GPBDecodeException('Duration number too small.');
         }
-        return strval(bcadd($value->getSeconds(),
-                      $value->getNanos() / 1000000000.0, 9));
+
+        $nanos = $value->getNanos();
+        if ($nanos === 0) {
+            return (string) $value->getSeconds();
+        }
+
+        if ($nanos % 1000000 === 0) {
+            $digits = 3;
+        } elseif ($nanos % 1000 === 0) {
+            $digits = 6;
+        } else {
+            $digits = 9;
+        }
+
+        $nanos = bcdiv($nanos, '1000000000', $digits);
+        return bcadd($value->getSeconds(), $nanos, $digits);
     }
-
-
 
     public static function parseFieldMask($paths_string)
     {
-        $path_strings = explode(",", $paths_string);
         $field_mask = new FieldMask();
+        if (strlen($paths_string) === 0) {
+            return $field_mask;
+        }
+        $path_strings = explode(",", $paths_string);
         $paths = $field_mask->getPaths();
         foreach($path_strings as &$path_string) {
             $field_strings = explode(".", $path_string);

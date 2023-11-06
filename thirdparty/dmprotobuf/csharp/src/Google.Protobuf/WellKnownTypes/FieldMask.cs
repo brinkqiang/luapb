@@ -25,15 +25,14 @@ namespace Google.Protobuf.WellKnownTypes {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CiBnb29nbGUvcHJvdG9idWYvZmllbGRfbWFzay5wcm90bxIPZ29vZ2xlLnBy",
-            "b3RvYnVmIhoKCUZpZWxkTWFzaxINCgVwYXRocxgBIAMoCUKJAQoTY29tLmdv",
-            "b2dsZS5wcm90b2J1ZkIORmllbGRNYXNrUHJvdG9QAVo5Z29vZ2xlLmdvbGFu",
-            "Zy5vcmcvZ2VucHJvdG8vcHJvdG9idWYvZmllbGRfbWFzaztmaWVsZF9tYXNr",
-            "ogIDR1BCqgIeR29vZ2xlLlByb3RvYnVmLldlbGxLbm93blR5cGVzYgZwcm90",
-            "bzM="));
+            "b3RvYnVmIhoKCUZpZWxkTWFzaxINCgVwYXRocxgBIAMoCUKFAQoTY29tLmdv",
+            "b2dsZS5wcm90b2J1ZkIORmllbGRNYXNrUHJvdG9QAVoyZ29vZ2xlLmdvbGFu",
+            "Zy5vcmcvcHJvdG9idWYvdHlwZXMva25vd24vZmllbGRtYXNrcGL4AQGiAgNH",
+            "UEKqAh5Hb29nbGUuUHJvdG9idWYuV2VsbEtub3duVHlwZXNiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.WellKnownTypes.FieldMask), global::Google.Protobuf.WellKnownTypes.FieldMask.Parser, new[]{ "Paths" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Protobuf.WellKnownTypes.FieldMask), global::Google.Protobuf.WellKnownTypes.FieldMask.Parser, new[]{ "Paths" }, null, null, null, null)
           }));
     }
     #endregion
@@ -108,57 +107,49 @@ namespace Google.Protobuf.WellKnownTypes {
   /// describe the updated values, the API ignores the values of all
   /// fields not covered by the mask.
   ///
-  /// If a repeated field is specified for an update operation, the existing
-  /// repeated values in the target resource will be overwritten by the new values.
-  /// Note that a repeated field is only allowed in the last position of a `paths`
-  /// string.
+  /// If a repeated field is specified for an update operation, new values will
+  /// be appended to the existing repeated field in the target resource. Note that
+  /// a repeated field is only allowed in the last position of a `paths` string.
   ///
   /// If a sub-message is specified in the last position of the field mask for an
-  /// update operation, then the existing sub-message in the target resource is
-  /// overwritten. Given the target message:
+  /// update operation, then new value will be merged into the existing sub-message
+  /// in the target resource.
+  ///
+  /// For example, given the target message:
   ///
   ///     f {
   ///       b {
-  ///         d : 1
-  ///         x : 2
+  ///         d: 1
+  ///         x: 2
   ///       }
-  ///       c : 1
+  ///       c: [1]
   ///     }
   ///
   /// And an update message:
   ///
   ///     f {
   ///       b {
-  ///         d : 10
+  ///         d: 10
   ///       }
+  ///       c: [2]
   ///     }
   ///
   /// then if the field mask is:
   ///
-  ///  paths: "f.b"
+  ///  paths: ["f.b", "f.c"]
   ///
   /// then the result will be:
   ///
   ///     f {
   ///       b {
-  ///         d : 10
+  ///         d: 10
+  ///         x: 2
   ///       }
-  ///       c : 1
+  ///       c: [1, 2]
   ///     }
   ///
-  /// However, if the update mask was:
-  ///
-  ///  paths: "f.b.d"
-  ///
-  /// then the result would be:
-  ///
-  ///     f {
-  ///       b {
-  ///         d : 10
-  ///         x : 2
-  ///       }
-  ///       c : 1
-  ///     }
+  /// An implementation may provide options to override this default behavior for
+  /// repeated and message fields.
   ///
   /// In order to reset a field's value to the default, the field must
   /// be in the mask and set to the default value in the provided resource.
@@ -246,9 +237,13 @@ namespace Google.Protobuf.WellKnownTypes {
   ///
   /// The implementation of any API method which has a FieldMask type field in the
   /// request should verify the included field paths, and return an
-  /// `INVALID_ARGUMENT` error if any path is duplicated or unmappable.
+  /// `INVALID_ARGUMENT` error if any path is unmappable.
   /// </summary>
-  public sealed partial class FieldMask : pb::IMessage<FieldMask> {
+  public sealed partial class FieldMask : pb::IMessage<FieldMask>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<FieldMask> _parser = new pb::MessageParser<FieldMask>(() => new FieldMask());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -329,11 +324,25 @@ namespace Google.Protobuf.WellKnownTypes {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       paths_.WriteTo(output, _repeated_paths_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      paths_.WriteTo(ref output, _repeated_paths_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -356,6 +365,9 @@ namespace Google.Protobuf.WellKnownTypes {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -368,7 +380,26 @@ namespace Google.Protobuf.WellKnownTypes {
           }
         }
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            paths_.AddEntriesFrom(ref input, _repeated_paths_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
 
   }
 

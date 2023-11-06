@@ -41,6 +41,7 @@
  * using the typed jspb code generator, but if you bypass that you'll need
  * to keep things in sync by hand.
  *
+ * @suppress {missingRequire} TODO(b/152540451): this shouldn't be needed
  * @author aappleby@google.com (Austin Appleby)
  */
 
@@ -49,6 +50,7 @@ goog.provide('jspb.BinaryReader');
 goog.require('goog.asserts');
 goog.require('jspb.BinaryConstants');
 goog.require('jspb.BinaryDecoder');
+goog.require('jspb.utils');
 
 
 
@@ -97,7 +99,7 @@ jspb.BinaryReader = function(opt_bytes, opt_start, opt_length) {
 
   /**
    * User-defined reader callbacks.
-   * @private {Object<string, function(!jspb.BinaryReader):*>}
+   * @private {?Object<string, function(!jspb.BinaryReader):*>}
    */
   this.readCallbacks_ = null;
 };
@@ -206,6 +208,15 @@ jspb.BinaryReader.prototype.getWireType = function() {
 
 
 /**
+ * @return {boolean} Whether the current wire type is a delimited field. Used to
+ * conditionally parse packed repeated fields.
+ */
+jspb.BinaryReader.prototype.isDelimited = function() {
+  return this.nextWireType_ == jspb.BinaryConstants.WireType.DELIMITED;
+};
+
+
+/**
  * @return {boolean} Whether the current wire type is an end-group tag. Used as
  * an exit condition in decoder loops in generated code.
  */
@@ -290,7 +301,9 @@ jspb.BinaryReader.prototype.nextField = function() {
       nextWireType != jspb.BinaryConstants.WireType.DELIMITED &&
       nextWireType != jspb.BinaryConstants.WireType.START_GROUP &&
       nextWireType != jspb.BinaryConstants.WireType.END_GROUP) {
-    goog.asserts.fail('Invalid wire type');
+    goog.asserts.fail(
+        'Invalid wire type: %s (at position %s)', nextWireType,
+        this.fieldCursor_);
     this.error_ = true;
     return false;
   }
@@ -388,8 +401,7 @@ jspb.BinaryReader.prototype.skipFixed64Field = function() {
  * Skips over the next group field in the binary stream.
  */
 jspb.BinaryReader.prototype.skipGroup = function() {
-  // Keep a stack of start-group tags that must be matched by end-group tags.
-  var nestedGroups = [this.nextField_];
+  var previousField = this.nextField_;
   do {
     if (!this.nextField()) {
       goog.asserts.fail('Unmatched start-group tag: stream EOF');
@@ -397,19 +409,17 @@ jspb.BinaryReader.prototype.skipGroup = function() {
       return;
     }
     if (this.nextWireType_ ==
-        jspb.BinaryConstants.WireType.START_GROUP) {
-      // Nested group start.
-      nestedGroups.push(this.nextField_);
-    } else if (this.nextWireType_ ==
                jspb.BinaryConstants.WireType.END_GROUP) {
       // Group end: check that it matches top-of-stack.
-      if (this.nextField_ != nestedGroups.pop()) {
+      if (this.nextField_ != previousField) {
         goog.asserts.fail('Unmatched end-group tag');
         this.error_ = true;
         return;
       }
+      return;
     }
-  } while (nestedGroups.length > 0);
+    this.skipField();
+  } while (true);
 };
 
 
@@ -445,9 +455,9 @@ jspb.BinaryReader.prototype.skipField = function() {
  * @param {string} callbackName
  * @param {function(!jspb.BinaryReader):*} callback
  */
-jspb.BinaryReader.prototype.registerReadCallback =
-    function(callbackName, callback) {
-  if (goog.isNull(this.readCallbacks_)) {
+jspb.BinaryReader.prototype.registerReadCallback = function(
+    callbackName, callback) {
+  if (this.readCallbacks_ === null) {
     this.readCallbacks_ = {};
   }
   goog.asserts.assert(!this.readCallbacks_[callbackName]);
@@ -461,7 +471,7 @@ jspb.BinaryReader.prototype.registerReadCallback =
  * @return {*} The value returned by the callback.
  */
 jspb.BinaryReader.prototype.runReadCallback = function(callbackName) {
-  goog.asserts.assert(!goog.isNull(this.readCallbacks_));
+  goog.asserts.assert(this.readCallbacks_ !== null);
   var callback = this.readCallbacks_[callbackName];
   goog.asserts.assert(callback);
   return callback(this);
@@ -942,7 +952,7 @@ jspb.BinaryReader.prototype.readBytes = function() {
 
 
 /**
- * Reads a 64-bit varint or fixed64 field from the stream and returns it as a
+ * Reads a 64-bit varint or fixed64 field from the stream and returns it as an
  * 8-character Unicode string for use as a hash table key, or throws an error
  * if the next field in the stream is not of the correct wire type.
  *
@@ -952,6 +962,56 @@ jspb.BinaryReader.prototype.readVarintHash64 = function() {
   goog.asserts.assert(
       this.nextWireType_ == jspb.BinaryConstants.WireType.VARINT);
   return this.decoder_.readVarintHash64();
+};
+
+
+/**
+ * Reads an sint64 field from the stream and returns it as an 8-character
+ * Unicode string for use as a hash table key, or throws an error if the next
+ * field in the stream is not of the correct wire type.
+ *
+ * @return {string} The hash value.
+ */
+jspb.BinaryReader.prototype.readSintHash64 = function() {
+  goog.asserts.assert(
+      this.nextWireType_ == jspb.BinaryConstants.WireType.VARINT);
+  return this.decoder_.readZigzagVarintHash64();
+};
+
+
+/**
+ * Reads a 64-bit varint field from the stream and invokes `convert` to produce
+ * the return value, or throws an error if the next field in the stream is not
+ * of the correct wire type.
+ *
+ * @param {function(number, number): T} convert Conversion function to produce
+ *     the result value, takes parameters (lowBits, highBits).
+ * @return {T}
+ * @template T
+ */
+jspb.BinaryReader.prototype.readSplitVarint64 = function(convert) {
+  goog.asserts.assert(
+      this.nextWireType_ == jspb.BinaryConstants.WireType.VARINT);
+  return this.decoder_.readSplitVarint64(convert);
+};
+
+
+/**
+ * Reads a 64-bit zig-zag varint field from the stream and invokes `convert` to
+ * produce the return value, or throws an error if the next field in the stream
+ * is not of the correct wire type.
+ *
+ * @param {function(number, number): T} convert Conversion function to produce
+ *     the result value, takes parameters (lowBits, highBits).
+ * @return {T}
+ * @template T
+ */
+jspb.BinaryReader.prototype.readSplitZigzagVarint64 = function(convert) {
+  goog.asserts.assert(
+      this.nextWireType_ == jspb.BinaryConstants.WireType.VARINT);
+  return this.decoder_.readSplitVarint64(function(lowBits, highBits) {
+    return jspb.utils.fromZigzag64(lowBits, highBits, convert);
+  });
 };
 
 
@@ -966,6 +1026,23 @@ jspb.BinaryReader.prototype.readFixedHash64 = function() {
   goog.asserts.assert(
       this.nextWireType_ == jspb.BinaryConstants.WireType.FIXED64);
   return this.decoder_.readFixedHash64();
+};
+
+
+/**
+ * Reads a 64-bit fixed64 field from the stream and invokes `convert`
+ * to produce the return value, or throws an error if the next field in the
+ * stream is not of the correct wire type.
+ *
+ * @param {function(number, number): T} convert Conversion function to produce
+ *     the result value, takes parameters (lowBits, highBits).
+ * @return {T}
+ * @template T
+ */
+jspb.BinaryReader.prototype.readSplitFixed64 = function(convert) {
+  goog.asserts.assert(
+      this.nextWireType_ == jspb.BinaryConstants.WireType.FIXED64);
+  return this.decoder_.readSplitFixed64(convert);
 };
 
 

@@ -33,16 +33,17 @@
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <memory>
 
 #include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/util/internal/object_writer.h>
 #include <google/protobuf/util/internal/json_escaping.h>
-#include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/mathlimits.h>
 
 
 namespace google {
@@ -63,10 +64,12 @@ namespace converter {
 // Number of digits in an escaped UTF-16 code unit ('\\' 'u' X X X X)
 static const int kUnicodeEscapedLength = 6;
 
-// Length of the true, false, and null literals.
-static const int true_len = strlen("true");
-static const int false_len = strlen("false");
-static const int null_len = strlen("null");
+static const int kDefaultMaxRecursionDepth = 100;
+
+// These cannot be constexpr for portability with VS2015.
+static const StringPiece kKeywordTrue = "true";
+static const StringPiece kKeywordFalse = "false";
+static const StringPiece kKeywordNull = "null";
 
 inline bool IsLetter(char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_') ||
@@ -77,11 +80,52 @@ inline bool IsAlphanumeric(char c) {
   return IsLetter(c) || ('0' <= c && c <= '9');
 }
 
+// Indicates a character may not be part of an unquoted key.
+inline bool IsKeySeparator(char c) {
+  return (ascii_isspace(c) || c == '"' || c == '\'' || c == '{' ||
+          c == '}' || c == '[' || c == ']' || c == ':' || c == ',');
+}
+
+inline void ReplaceInvalidCodePoints(StringPiece str,
+                                     const std::string& replacement,
+                                     std::string* dst) {
+  while (!str.empty()) {
+    int n_valid_bytes = internal::UTF8SpnStructurallyValid(str);
+    StringPiece valid_part = str.substr(0, n_valid_bytes);
+    StrAppend(dst, valid_part);
+
+    if (n_valid_bytes == str.size()) {
+      break;
+    }
+
+    // Append replacement value.
+    StrAppend(dst, replacement);
+
+    // Move past valid bytes + one invalid byte.
+    str.remove_prefix(n_valid_bytes + 1);
+  }
+}
+
 static bool ConsumeKey(StringPiece* input, StringPiece* key) {
   if (input->empty() || !IsLetter((*input)[0])) return false;
   int len = 1;
   for (; len < input->size(); ++len) {
     if (!IsAlphanumeric((*input)[len])) {
+      break;
+    }
+  }
+  *key = StringPiece(input->data(), len);
+  *input = StringPiece(input->data() + len, input->size() - len);
+  return true;
+}
+
+// Same as 'ConsumeKey', but allows a widened set of key characters.
+static bool ConsumeKeyPermissive(StringPiece* input,
+                                 StringPiece* key) {
+  if (input->empty() || !IsLetter((*input)[0])) return false;
+  int len = 1;
+  for (; len < input->size(); ++len) {
+    if (IsKeySeparator((*input)[len])) {
       break;
     }
   }
@@ -108,8 +152,12 @@ JsonStreamParser::JsonStreamParser(ObjectWriter* ow)
       string_open_(0),
       chunk_storage_(),
       coerce_to_utf8_(false),
+      utf8_replacement_character_(" "),
       allow_empty_null_(false),
-      loose_float_number_conversion_(false) {
+      allow_permissive_key_naming_(false),
+      loose_float_number_conversion_(false),
+      recursion_depth_(0),
+      max_recursion_depth_(kDefaultMaxRecursionDepth) {
   // Initialize the stack with a single value to be parsed.
   stack_.push(VALUE);
 }
@@ -153,15 +201,20 @@ util::Status JsonStreamParser::FinishParse() {
     return util::Status();
   }
 
-  // Storage for UTF8-coerced string.
-  std::unique_ptr<char[]> utf8;
-  if (coerce_to_utf8_) {
-    utf8.reset(new char[leftover_.size()]);
-    char* coerced = internal::UTF8CoerceToStructurallyValid(leftover_, utf8.get(), ' ');
-    p_ = json_ = StringPiece(coerced, leftover_.size());
+  // Lifetime needs to last until RunParser returns, so keep this variable
+  // outside of the coerce_to_utf8 block.
+  std::unique_ptr<std::string> scratch;
+
+  bool is_valid_utf8 = internal::IsStructurallyValidUTF8(leftover_);
+  if (coerce_to_utf8_ && !is_valid_utf8) {
+    scratch.reset(new std::string);
+    scratch->reserve(leftover_.size() * utf8_replacement_character_.size());
+    ReplaceInvalidCodePoints(leftover_, utf8_replacement_character_,
+                             scratch.get());
+    p_ = json_ = *scratch;
   } else {
     p_ = json_ = leftover_;
-    if (!internal::IsStructurallyValidUTF8(leftover_)) {
+    if (!is_valid_utf8) {
       return ReportFailure("Encountered non UTF-8 code points.");
     }
   }
@@ -201,7 +254,7 @@ util::Status JsonStreamParser::ParseChunk(StringPiece chunk) {
     }
     // If we expect future data i.e. stack is non-empty, and we have some
     // unparsed data left, we save it for later parse.
-    leftover_ = p_.ToString();
+    leftover_ = std::string(p_);
   }
   return util::Status();
 }
@@ -244,7 +297,8 @@ util::Status JsonStreamParser::RunParser() {
     }
     if (!result.ok()) {
       // If we were cancelled, save our state and try again later.
-      if (!finishing_ && result == util::Status(error::CANCELLED, "")) {
+      if (!finishing_ &&
+          result == util::Status(util::error::CANCELLED, "")) {
         stack_.push(type);
         // If we have a key we still need to render, make sure to save off the
         // contents in our own storage.
@@ -287,8 +341,8 @@ util::Status JsonStreamParser::ParseValue(TokenType type) {
       // This handles things like 'fals' being at the end of the string, we
       // don't know if the next char would be e, completing it, or something
       // else, making it invalid.
-      if (!finishing_ && p_.length() < false_len) {
-        return util::Status(error::CANCELLED, "");
+      if (!finishing_ && p_.length() < kKeywordFalse.length()) {
+        return util::Status(util::error::CANCELLED, "");
       }
       return ReportFailure("Unexpected token.");
     }
@@ -326,7 +380,7 @@ util::Status JsonStreamParser::ParseStringHelper() {
       // depending on if we expect more data later.
       if (p_.length() == 1) {
         if (!finishing_) {
-          return util::Status(error::CANCELLED, "");
+          return util::Status(util::error::CANCELLED, "");
         }
         return ReportFailure("Closing quote expected in string.");
       }
@@ -394,7 +448,7 @@ util::Status JsonStreamParser::ParseStringHelper() {
   }
   // If we didn't find the closing quote but we expect more data, cancel for now
   if (!finishing_) {
-    return util::Status(error::CANCELLED, "");
+    return util::Status(util::error::CANCELLED, "");
   }
   // End of string reached without a closing quote, report an error.
   string_open_ = 0;
@@ -411,7 +465,7 @@ util::Status JsonStreamParser::ParseStringHelper() {
 util::Status JsonStreamParser::ParseUnicodeEscape() {
   if (p_.length() < kUnicodeEscapedLength) {
     if (!finishing_) {
-      return util::Status(error::CANCELLED, "");
+      return util::Status(util::error::CANCELLED, "");
     }
     return ReportFailure("Illegal hex string.");
   }
@@ -428,7 +482,7 @@ util::Status JsonStreamParser::ParseUnicodeEscape() {
       code <= JsonEscaping::kMaxHighSurrogate) {
     if (p_.length() < 2 * kUnicodeEscapedLength) {
       if (!finishing_) {
-        return util::Status(error::CANCELLED, "");
+        return util::Status(util::error::CANCELLED, "");
       }
       if (!coerce_to_utf8_) {
         return ReportFailure("Missing low surrogate.");
@@ -495,13 +549,12 @@ util::Status JsonStreamParser::ParseNumber() {
   return result;
 }
 
-util::Status JsonStreamParser::ParseDoubleHelper(
-    const string& number, NumberResult* result) {
+util::Status JsonStreamParser::ParseDoubleHelper(const std::string& number,
+                                                 NumberResult* result) {
   if (!safe_strtod(number, &result->double_val)) {
     return ReportFailure("Unable to parse number.");
   }
-  if (!loose_float_number_conversion_ &&
-      !MathLimits<double>::IsFinite(result->double_val)) {
+  if (!loose_float_number_conversion_ && !std::isfinite(result->double_val)) {
     return ReportFailure("Number exceeds the range of double.");
   }
   result->type = NumberResult::DOUBLE;
@@ -535,11 +588,11 @@ util::Status JsonStreamParser::ParseNumberHelper(NumberResult* result) {
   // If the entire input is a valid number, and we may have more content in the
   // future, we abort for now and resume when we know more.
   if (index == length && !finishing_) {
-    return util::Status(error::CANCELLED, "");
+    return util::Status(util::error::CANCELLED, "");
   }
 
   // Create a string containing just the number, so we can use safe_strtoX
-  string number = p_.substr(0, index).ToString();
+  std::string number = std::string(p_.substr(0, index));
 
   // Floating point number, parse as a double.
   if (floating) {
@@ -593,6 +646,10 @@ util::Status JsonStreamParser::HandleBeginObject() {
   GOOGLE_DCHECK_EQ('{', *p_.data());
   Advance();
   ow_->StartObject(key_);
+  auto status = IncrementRecursionDepth(key_);
+  if (!status.ok()) {
+    return status;
+  }
   key_ = StringPiece();
   stack_.push(ENTRY);
   return util::Status();
@@ -607,6 +664,7 @@ util::Status JsonStreamParser::ParseObjectMid(TokenType type) {
   if (type == END_OBJECT) {
     Advance();
     ow_->EndObject();
+    --recursion_depth_;
     return util::Status();
   }
   // Found a comma, advance past it and get ready for an entry.
@@ -628,6 +686,7 @@ util::Status JsonStreamParser::ParseEntry(TokenType type) {
   if (type == END_OBJECT) {
     ow_->EndObject();
     Advance();
+    --recursion_depth_;
     return util::Status();
   }
 
@@ -648,6 +707,13 @@ util::Status JsonStreamParser::ParseEntry(TokenType type) {
   } else if (type == BEGIN_KEY) {
     // Key is a bare key (back compat), create a StringPiece pointing to it.
     result = ParseKey();
+  } else if (type == BEGIN_NULL || type == BEGIN_TRUE || type == BEGIN_FALSE) {
+    // Key may be a bare key that begins with a reserved word.
+    result = ParseKey();
+    if (result.ok() && (key_ == kKeywordNull || key_ == kKeywordTrue ||
+                        key_ == kKeywordFalse)) {
+      result = ReportFailure("Expected an object key or }.");
+    }
   } else {
     // Unknown key type, report an error.
     result = ReportFailure("Expected an object key or }.");
@@ -697,7 +763,7 @@ util::Status JsonStreamParser::ParseArrayValue(TokenType type) {
   // empty-null array value is relying on this ARRAY_MID token.
   stack_.push(ARRAY_MID);
   util::Status result = ParseValue(type);
-  if (result == util::Status(error::CANCELLED, "")) {
+  if (result == util::Status(util::error::CANCELLED, "")) {
     // If we were cancelled, pop back off the ARRAY_MID so we don't try to
     // push it on again when we try over.
     stack_.pop();
@@ -729,21 +795,21 @@ util::Status JsonStreamParser::ParseArrayMid(TokenType type) {
 util::Status JsonStreamParser::ParseTrue() {
   ow_->RenderBool(key_, true);
   key_ = StringPiece();
-  p_.remove_prefix(true_len);
+  p_.remove_prefix(kKeywordTrue.length());
   return util::Status();
 }
 
 util::Status JsonStreamParser::ParseFalse() {
   ow_->RenderBool(key_, false);
   key_ = StringPiece();
-  p_.remove_prefix(false_len);
+  p_.remove_prefix(kKeywordFalse.length());
   return util::Status();
 }
 
 util::Status JsonStreamParser::ParseNull() {
   ow_->RenderNull(key_);
   key_ = StringPiece();
-  p_.remove_prefix(null_len);
+  p_.remove_prefix(kKeywordNull.length());
   return util::Status();
 }
 
@@ -767,7 +833,7 @@ util::Status JsonStreamParser::ReportFailure(StringPiece message) {
   const char* end =
       std::min(p_start + kContextLength, json_start + json_.size());
   StringPiece segment(begin, end - begin);
-  string location(p_start - begin, ' ');
+  std::string location(p_start - begin, ' ');
   location.push_back('^');
   return util::Status(util::error::INVALID_ARGUMENT,
                       StrCat(message, "\n", segment, "\n", location));
@@ -776,12 +842,23 @@ util::Status JsonStreamParser::ReportFailure(StringPiece message) {
 util::Status JsonStreamParser::ReportUnknown(StringPiece message) {
   // If we aren't finishing the parse, cancel parsing and try later.
   if (!finishing_) {
-    return util::Status(error::CANCELLED, "");
+    return util::Status(util::error::CANCELLED, "");
   }
   if (p_.empty()) {
     return ReportFailure(StrCat("Unexpected end of string. ", message));
   }
   return ReportFailure(message);
+}
+
+util::Status JsonStreamParser::IncrementRecursionDepth(
+    StringPiece key) const {
+  if (++recursion_depth_ > max_recursion_depth_) {
+    return util::Status(
+        util::error::INVALID_ARGUMENT,
+        StrCat("Message too deep. Max recursion depth reached for key '",
+                     key, "'"));
+  }
+  return util::Status();
 }
 
 void JsonStreamParser::SkipWhitespace() {
@@ -799,14 +876,22 @@ void JsonStreamParser::Advance() {
 
 util::Status JsonStreamParser::ParseKey() {
   StringPiece original = p_;
-  if (!ConsumeKey(&p_, &key_)) {
-    return ReportFailure("Invalid key or variable name.");
+
+  if (allow_permissive_key_naming_) {
+    if (!ConsumeKeyPermissive(&p_, &key_)) {
+      return ReportFailure("Invalid key or variable name.");
+    }
+  } else {
+    if (!ConsumeKey(&p_, &key_)) {
+      return ReportFailure("Invalid key or variable name.");
+    }
   }
+
   // If we consumed everything but expect more data, reset p_ and cancel since
   // we can't know if the key was complete or not.
   if (!finishing_ && p_.empty()) {
     p_ = original;
-    return util::Status(error::CANCELLED, "");
+    return util::Status(util::error::CANCELLED, "");
   }
   // Since we aren't using the key storage, clear it out.
   key_storage_.clear();
@@ -825,17 +910,21 @@ JsonStreamParser::TokenType JsonStreamParser::GetNextTokenType() {
   // TODO(sven): Split this method based on context since different contexts
   // support different tokens. Would slightly speed up processing?
   const char* data = p_.data();
+  StringPiece data_view = StringPiece(data, size);
   if (*data == '\"' || *data == '\'') return BEGIN_STRING;
   if (*data == '-' || ('0' <= *data && *data <= '9')) {
     return BEGIN_NUMBER;
   }
-  if (size >= true_len && !strncmp(data, "true", true_len)) {
+  if (size >= kKeywordTrue.length() &&
+      HasPrefixString(data_view, kKeywordTrue)) {
     return BEGIN_TRUE;
   }
-  if (size >= false_len && !strncmp(data, "false", false_len)) {
+  if (size >= kKeywordFalse.length() &&
+      HasPrefixString(data_view, kKeywordFalse)) {
     return BEGIN_FALSE;
   }
-  if (size >= null_len && !strncmp(data, "null", null_len)) {
+  if (size >= kKeywordNull.length() &&
+      HasPrefixString(data_view, kKeywordNull)) {
     return BEGIN_NULL;
   }
   if (*data == '{') return BEGIN_OBJECT;

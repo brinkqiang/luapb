@@ -31,6 +31,7 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Google.Protobuf.TestProtos;
 using NUnit.Framework;
@@ -86,7 +87,7 @@ namespace Google.Protobuf.Collections
             var map = new MapField<string, ForeignMessage>();
             Assert.Throws<ArgumentNullException>(() => map[null] = new ForeignMessage());
         }
-        
+
         [Test]
         public void AddPreservesInsertionOrder()
         {
@@ -471,7 +472,7 @@ namespace Google.Protobuf.Collections
             keys.CopyTo(array, 1);
             CollectionAssert.AreEqual(new[] { null, "foo", "x", null }, array);
         }
-        
+
         // Just test keys - we know the implementation is the same for values
         [Test]
         public void NonGenericViewCopyTo()
@@ -581,6 +582,33 @@ namespace Google.Protobuf.Collections
             Assert.AreEqual("y", map[SampleNaNs.SignallingFlipped]);
             string ignored;
             Assert.False(map.TryGetValue(SampleNaNs.PayloadFlipped, out ignored));
+        }
+
+        [Test]
+        public void AddEntriesFrom_CodedInputStream()
+        {
+            // map will have string key and string value
+            var keyTag = WireFormat.MakeTag(1, WireFormat.WireType.LengthDelimited);
+            var valueTag = WireFormat.MakeTag(2, WireFormat.WireType.LengthDelimited);
+
+            var memoryStream = new MemoryStream();
+            var output = new CodedOutputStream(memoryStream);
+            output.WriteLength(20);  // total of keyTag + key + valueTag + value
+            output.WriteTag(keyTag);
+            output.WriteString("the_key");
+            output.WriteTag(valueTag);
+            output.WriteString("the_value");
+            output.Flush();
+
+            var field = new MapField<string,string>();
+            var mapCodec = new MapField<string,string>.Codec(FieldCodec.ForString(keyTag, ""), FieldCodec.ForString(valueTag, ""), 10);
+            var input = new CodedInputStream(memoryStream.ToArray());
+
+            // test the legacy overload of AddEntriesFrom that takes a CodedInputStream
+            field.AddEntriesFrom(input, mapCodec);
+            CollectionAssert.AreEquivalent(new[] { "the_key" }, field.Keys);
+            CollectionAssert.AreEquivalent(new[] { "the_value" }, field.Values);
+            Assert.IsTrue(input.IsAtEnd);
         }
 
 #if !NET35

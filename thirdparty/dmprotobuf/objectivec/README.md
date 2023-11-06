@@ -1,7 +1,7 @@
 Protocol Buffers - Google's data interchange format
 ===================================================
 
-[![Build Status](https://travis-ci.org/google/protobuf.svg?branch=master)](https://travis-ci.org/google/protobuf)
+[![Build status](https://storage.googleapis.com/protobuf-kokoro-results/status-badge/macos-objectivec_cocoapods_integration.png)](https://fusion.corp.google.com/projectanalysis/current/KOKORO/prod:protobuf%2Fgithub%2Fmaster%2Fmacos%2Fobjectivec_cocoapods_integration%2Fcontinuous) [![Build status](https://storage.googleapis.com/protobuf-kokoro-results/status-badge/macos-objectivec_ios_debug.png)](https://fusion.corp.google.com/projectanalysis/current/KOKORO/prod:protobuf%2Fgithub%2Fmaster%2Fmacos%2Fobjectivec_ios_debug%2Fcontinuous) [![Build status](https://storage.googleapis.com/protobuf-kokoro-results/status-badge/macos-objectivec_ios_release.png)](https://fusion.corp.google.com/projectanalysis/current/KOKORO/prod:protobuf%2Fgithub%2Fmaster%2Fmacos%2Fobjectivec_ios_release%2Fcontinuous) [![Build status](https://storage.googleapis.com/protobuf-kokoro-results/status-badge/macos-objectivec_osx.png)](https://fusion.corp.google.com/projectanalysis/current/KOKORO/prod:protobuf%2Fgithub%2Fmaster%2Fmacos%2Fobjectivec_osx%2Fcontinuous)
 
 Copyright 2008 Google Inc.
 
@@ -13,16 +13,17 @@ Requirements
 The Objective C implementation requires:
 
 - Objective C 2.0 Runtime (32bit & 64bit iOS, 64bit OS X).
-- Xcode 8.0 (or later).
+- Xcode 10.3 (or later).
 - The library code does *not* use ARC (for performance reasons), but it all can
   be called from ARC code.
 
 Installation
 ------------
 
-The full distribution pulled from github includes the sources for both the
-compiler (protoc) and the runtime (this directory). To build the compiler
-and run the runtime tests, you can use:
+The distribution pulled from github includes the sources for both the
+compiler (protoc) and the runtime (this directory). After cloning the distribution
+and needed submodules ([see the src directory's README](../src/README.md)),
+to build the compiler and run the runtime tests, you can use:
 
      $ objectivec/DevTools/full_mac_build.sh
 
@@ -167,9 +168,15 @@ supported keys are:
     Any number of files can be listed for a framework, just separate them with
     commas.
 
-    There can be multiple lines listing the same frameworkName incase it has a
+    There can be multiple lines listing the same frameworkName in case it has a
     lot of proto files included in it; and having multiple lines makes things
     easier to read.
+
+  * `runtime_import_prefix`: The `value` used for this key to be used as a
+    prefix on `#import`s of runtime provided headers in the generated files.
+    When integrating ObjC protos into a build system, this can be used to avoid
+    having to add the runtime directory to the header search path since the
+    generate `#import` will be more complete.
 
 Contributing
 ------------

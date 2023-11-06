@@ -49,36 +49,61 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = protobuf.pc protobuf-lite.pc
 
 csharp_EXTRA_DIST=                                                           \
+  global.json                                                                \
   csharp/.gitignore                                                          \
   csharp/CHANGES.txt                                                         \
+  csharp/Google.Protobuf.Tools.targets                                       \
   csharp/Google.Protobuf.Tools.nuspec                                        \
   csharp/README.md                                                           \
   csharp/build_packages.bat                                                  \
   csharp/build_tools.sh                                                      \
+  csharp/buildall.bat                                                        \
   csharp/buildall.sh                                                         \
   csharp/generate_protos.sh                                                  \
-  csharp/global.json                                                         \
+  csharp/install_dotnet_sdk.ps1                                              \
   csharp/keys/Google.Protobuf.public.snk                                     \
   csharp/keys/Google.Protobuf.snk                                            \
   csharp/keys/README.md                                                      \
   csharp/protos/README.md                                                    \
   csharp/protos/map_unittest_proto3.proto                                    \
+  csharp/protos/old_extensions1.proto                                        \
+  csharp/protos/old_extensions2.proto                                        \
+  csharp/protos/unittest_issue6936_a.proto                                   \
+  csharp/protos/unittest_issue6936_b.proto                                   \
+  csharp/protos/unittest_issue6936_c.proto                                   \
   csharp/protos/unittest_custom_options_proto3.proto                         \
   csharp/protos/unittest_import_public_proto3.proto                          \
+  csharp/protos/unittest_import_public.proto                                 \
   csharp/protos/unittest_import_proto3.proto                                 \
+  csharp/protos/unittest_import.proto                                        \
   csharp/protos/unittest_issues.proto                                        \
   csharp/protos/unittest_proto3.proto                                        \
+  csharp/protos/unittest_selfreferential_options.proto                       \
+  csharp/protos/unittest.proto                                               \
   csharp/src/AddressBook/AddPerson.cs                                        \
   csharp/src/AddressBook/Addressbook.cs                                      \
   csharp/src/AddressBook/AddressBook.csproj                                  \
   csharp/src/AddressBook/ListPeople.cs                                       \
   csharp/src/AddressBook/Program.cs                                          \
   csharp/src/AddressBook/SampleUsage.cs                                      \
+  csharp/src/Google.Protobuf.Benchmarks/BenchmarkDatasetConfig.cs            \
+  csharp/src/Google.Protobuf.Benchmarks/BenchmarkMessage1Proto3.cs           \
+  csharp/src/Google.Protobuf.Benchmarks/Benchmarks.cs                        \
+  csharp/src/Google.Protobuf.Benchmarks/Google.Protobuf.Benchmarks.csproj    \
+  csharp/src/Google.Protobuf.Benchmarks/GoogleMessageBenchmark.cs            \
+  csharp/src/Google.Protobuf.Benchmarks/ParseMessagesBenchmark.cs            \
+  csharp/src/Google.Protobuf.Benchmarks/ParseRawPrimitivesBenchmark.cs       \
+  csharp/src/Google.Protobuf.Benchmarks/Program.cs                           \
+  csharp/src/Google.Protobuf.Benchmarks/wrapper_benchmark_messages.proto     \
+  csharp/src/Google.Protobuf.Benchmarks/WrapperBenchmarkMessages.cs          \
+  csharp/src/Google.Protobuf.Benchmarks/WriteMessagesBenchmark.cs            \
+  csharp/src/Google.Protobuf.Benchmarks/WriteRawPrimitivesBenchmark.cs       \
   csharp/src/Google.Protobuf.Conformance/Conformance.cs                      \
   csharp/src/Google.Protobuf.Conformance/Google.Protobuf.Conformance.csproj  \
   csharp/src/Google.Protobuf.Conformance/Program.cs                          \
   csharp/src/Google.Protobuf.JsonDump/Google.Protobuf.JsonDump.csproj        \
   csharp/src/Google.Protobuf.JsonDump/Program.cs                             \
+  csharp/src/Google.Protobuf.Test/Buffers/ArrayBufferWriter.cs               \
   csharp/src/Google.Protobuf.Test/ByteStringTest.cs                          \
   csharp/src/Google.Protobuf.Test/CodedInputStreamExtensions.cs              \
   csharp/src/Google.Protobuf.Test/CodedInputStreamTest.cs                    \
@@ -91,14 +116,23 @@ csharp_EXTRA_DIST=                                                           \
   csharp/src/Google.Protobuf.Test/Compatibility/TypeExtensionsTest.cs        \
   csharp/src/Google.Protobuf.Test/DeprecatedMemberTest.cs                    \
   csharp/src/Google.Protobuf.Test/EqualityTester.cs                          \
+  csharp/src/Google.Protobuf.Test/ExtensionSetTest.cs                        \
   csharp/src/Google.Protobuf.Test/FieldCodecTest.cs                          \
+  csharp/src/Google.Protobuf.Test/FieldMaskTreeTest.cs                       \
   csharp/src/Google.Protobuf.Test/GeneratedMessageTest.cs                    \
+  csharp/src/Google.Protobuf.Test/GeneratedMessageTest.Proto2.cs             \
   csharp/src/Google.Protobuf.Test/Google.Protobuf.Test.csproj                \
   csharp/src/Google.Protobuf.Test/IssuesTest.cs                              \
   csharp/src/Google.Protobuf.Test/JsonFormatterTest.cs                       \
   csharp/src/Google.Protobuf.Test/JsonParserTest.cs                          \
   csharp/src/Google.Protobuf.Test/JsonTokenizerTest.cs                       \
+  csharp/src/Google.Protobuf.Test/LegacyGeneratedCodeTest.cs                 \
+  csharp/src/Google.Protobuf.Test/MessageParsingHelpers.cs                   \
+  csharp/src/Google.Protobuf.Test/Proto3OptionalTest.cs                      \
+  csharp/src/Google.Protobuf.Test/ReadOnlySequenceFactory.cs                 \
+  csharp/src/Google.Protobuf.Test/RefStructCompatibilityTest.cs              \
   csharp/src/Google.Protobuf.Test/Reflection/CustomOptionsTest.cs            \
+  csharp/src/Google.Protobuf.Test/Reflection/DescriptorDeclarationTest.cs    \
   csharp/src/Google.Protobuf.Test/Reflection/DescriptorsTest.cs              \
   csharp/src/Google.Protobuf.Test/Reflection/FieldAccessTest.cs              \
   csharp/src/Google.Protobuf.Test/Reflection/TypeRegistryTest.cs             \
@@ -106,21 +140,34 @@ csharp_EXTRA_DIST=                                                           \
   csharp/src/Google.Protobuf.Test/SampleMessages.cs                          \
   csharp/src/Google.Protobuf.Test/SampleNaNs.cs                              \
   csharp/src/Google.Protobuf.Test/TestCornerCases.cs                         \
-  csharp/src/Google.Protobuf.Test/TestProtos/ForeignMessagePartial.cs        \
-  csharp/src/Google.Protobuf.Test/TestProtos/MapUnittestProto3.cs            \
-  csharp/src/Google.Protobuf.Test/TestProtos/TestMessagesProto3.cs           \
-  csharp/src/Google.Protobuf.Test/TestProtos/UnittestCustomOptionsProto3.cs  \
-  csharp/src/Google.Protobuf.Test/TestProtos/UnittestImportProto3.cs         \
-  csharp/src/Google.Protobuf.Test/TestProtos/UnittestImportPublicProto3.cs   \
-  csharp/src/Google.Protobuf.Test/TestProtos/UnittestIssues.cs               \
-  csharp/src/Google.Protobuf.Test/TestProtos/UnittestProto3.cs               \
-  csharp/src/Google.Protobuf.Test/TestProtos/UnittestWellKnownTypes.cs       \
+  csharp/src/Google.Protobuf.Test.TestProtos/Google.Protobuf.Test.TestProtos.csproj \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestIssue6936A.cs              \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestIssue6936B.cs              \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestIssue6936C.cs              \
+  csharp/src/Google.Protobuf.Test.TestProtos/ForeignMessagePartial.cs           \
+  csharp/src/Google.Protobuf.Test.TestProtos/MapUnittestProto3.cs               \
+  csharp/src/Google.Protobuf.Test.TestProtos/OldExtensions1.cs                  \
+  csharp/src/Google.Protobuf.Test.TestProtos/OldExtensions2.cs                  \
+  csharp/src/Google.Protobuf.Test.TestProtos/TestMessagesProto2.cs              \
+  csharp/src/Google.Protobuf.Test.TestProtos/TestMessagesProto3.cs              \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestCustomOptionsProto3.cs     \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestImportProto3.cs            \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestImportPublicProto3.cs      \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestImportPublic.cs            \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestImport.cs                  \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestIssues.cs                  \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestProto3.cs                  \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestProto3Optional.cs          \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestSelfreferentialOptions.cs  \
+  csharp/src/Google.Protobuf.Test.TestProtos/UnittestWellKnownTypes.cs          \
+  csharp/src/Google.Protobuf.Test.TestProtos/Unittest.cs                        \
   csharp/src/Google.Protobuf.Test/WellKnownTypes/AnyTest.cs                  \
   csharp/src/Google.Protobuf.Test/WellKnownTypes/DurationTest.cs             \
   csharp/src/Google.Protobuf.Test/WellKnownTypes/FieldMaskTest.cs            \
   csharp/src/Google.Protobuf.Test/WellKnownTypes/TimestampTest.cs            \
   csharp/src/Google.Protobuf.Test/WellKnownTypes/WrappersTest.cs             \
   csharp/src/Google.Protobuf.Test/UnknownFieldSetTest.cs                     \
+  csharp/src/Google.Protobuf.Test/testprotos.pb                              \
   csharp/src/Google.Protobuf.sln                                             \
   csharp/src/Google.Protobuf/ByteArray.cs                                    \
   csharp/src/Google.Protobuf/ByteString.cs                                   \
@@ -136,11 +183,18 @@ csharp_EXTRA_DIST=                                                           \
   csharp/src/Google.Protobuf/Compatibility/PropertyInfoExtensions.cs         \
   csharp/src/Google.Protobuf/Compatibility/StreamExtensions.cs               \
   csharp/src/Google.Protobuf/Compatibility/TypeExtensions.cs                 \
+  csharp/src/Google.Protobuf/Extension.cs                                    \
+  csharp/src/Google.Protobuf/ExtensionRegistry.cs                            \
+  csharp/src/Google.Protobuf/ExtensionSet.cs                                 \
+  csharp/src/Google.Protobuf/ExtensionValue.cs                               \
   csharp/src/Google.Protobuf/FieldCodec.cs                                   \
+  csharp/src/Google.Protobuf/FieldMaskTree.cs                                \
   csharp/src/Google.Protobuf/FrameworkPortability.cs                         \
   csharp/src/Google.Protobuf/Google.Protobuf.csproj                          \
+  csharp/src/Google.Protobuf/IBufferMessage.cs                               \
   csharp/src/Google.Protobuf/ICustomDiagnosticMessage.cs                     \
   csharp/src/Google.Protobuf/IDeepCloneable.cs                               \
+  csharp/src/Google.Protobuf/IExtendableMessage.cs                           \
   csharp/src/Google.Protobuf/IMessage.cs                                     \
   csharp/src/Google.Protobuf/InvalidJsonException.cs                         \
   csharp/src/Google.Protobuf/InvalidProtocolBufferException.cs               \
@@ -151,16 +205,26 @@ csharp_EXTRA_DIST=                                                           \
   csharp/src/Google.Protobuf/LimitedInputStream.cs                           \
   csharp/src/Google.Protobuf/MessageExtensions.cs                            \
   csharp/src/Google.Protobuf/MessageParser.cs                                \
+  csharp/src/Google.Protobuf/ObjectIntPair.cs                                \
+  csharp/src/Google.Protobuf/ParseContext.cs                                 \
+  csharp/src/Google.Protobuf/ParserInternalState.cs                          \
+  csharp/src/Google.Protobuf/ParsingPrimitives.cs                            \
+  csharp/src/Google.Protobuf/ParsingPrimitivesMessages.cs                    \
+  csharp/src/Google.Protobuf/ParsingPrimitivesWrappers.cs                    \
   csharp/src/Google.Protobuf/ProtoPreconditions.cs                           \
+  csharp/src/Google.Protobuf/SegmentedBufferHelper.cs                        \
   csharp/src/Google.Protobuf/Properties/AssemblyInfo.cs                      \
   csharp/src/Google.Protobuf/Reflection/CustomOptions.cs                     \
   csharp/src/Google.Protobuf/Reflection/Descriptor.cs                        \
   csharp/src/Google.Protobuf/Reflection/DescriptorBase.cs                    \
+  csharp/src/Google.Protobuf/Reflection/DescriptorDeclaration.cs             \
   csharp/src/Google.Protobuf/Reflection/DescriptorPool.cs                    \
   csharp/src/Google.Protobuf/Reflection/DescriptorUtil.cs                    \
   csharp/src/Google.Protobuf/Reflection/DescriptorValidationException.cs     \
   csharp/src/Google.Protobuf/Reflection/EnumDescriptor.cs                    \
   csharp/src/Google.Protobuf/Reflection/EnumValueDescriptor.cs               \
+  csharp/src/Google.Protobuf/Reflection/ExtensionAccessor.cs                 \
+  csharp/src/Google.Protobuf/Reflection/ExtensionCollection.cs               \
   csharp/src/Google.Protobuf/Reflection/FieldAccessorBase.cs                 \
   csharp/src/Google.Protobuf/Reflection/FieldDescriptor.cs                   \
   csharp/src/Google.Protobuf/Reflection/FieldType.cs                         \
@@ -175,7 +239,6 @@ csharp_EXTRA_DIST=                                                           \
   csharp/src/Google.Protobuf/Reflection/OneofDescriptor.cs                   \
   csharp/src/Google.Protobuf/Reflection/OriginalNameAttribute.cs             \
   csharp/src/Google.Protobuf/Reflection/PackageDescriptor.cs                 \
-  csharp/src/Google.Protobuf/Reflection/PartialClasses.cs                    \
   csharp/src/Google.Protobuf/Reflection/ReflectionUtil.cs                    \
   csharp/src/Google.Protobuf/Reflection/RepeatedFieldAccessor.cs             \
   csharp/src/Google.Protobuf/Reflection/ServiceDescriptor.cs                 \
@@ -199,11 +262,18 @@ csharp_EXTRA_DIST=                                                           \
   csharp/src/Google.Protobuf/WellKnownTypes/Wrappers.cs                      \
   csharp/src/Google.Protobuf/WellKnownTypes/WrappersPartial.cs               \
   csharp/src/Google.Protobuf/WireFormat.cs                                   \
+  csharp/src/Google.Protobuf/WritingPrimitivesMessages.cs                    \
+  csharp/src/Google.Protobuf/WritingPrimitives.cs                            \
+  csharp/src/Google.Protobuf/WriterInternalState.cs                          \
+  csharp/src/Google.Protobuf/WriteContext.cs                                 \
+  csharp/src/Google.Protobuf/WriteBufferHelper.cs                            \
   csharp/src/Google.Protobuf/UnknownField.cs                                 \
   csharp/src/Google.Protobuf/UnknownFieldSet.cs
 
 java_EXTRA_DIST=                                                                   \
   java/README.md                                                                   \
+  java/bom/pom.xml                                                                 \
+  java/core/BUILD                                                                  \
   java/core/generate-sources-build.xml                                             \
   java/core/generate-test-sources-build.xml                                        \
   java/core/pom.xml                                                                \
@@ -211,17 +281,25 @@ java_EXTRA_DIST=                                                                
   java/core/src/main/java/com/google/protobuf/AbstractMessageLite.java             \
   java/core/src/main/java/com/google/protobuf/AbstractParser.java                  \
   java/core/src/main/java/com/google/protobuf/AbstractProtobufList.java            \
+  java/core/src/main/java/com/google/protobuf/AllocatedBuffer.java                 \
   java/core/src/main/java/com/google/protobuf/Android.java                         \
+  java/core/src/main/java/com/google/protobuf/ArrayDecoders.java                   \
+  java/core/src/main/java/com/google/protobuf/BinaryReader.java                    \
+  java/core/src/main/java/com/google/protobuf/BinaryWriter.java                    \
   java/core/src/main/java/com/google/protobuf/BlockingRpcChannel.java              \
   java/core/src/main/java/com/google/protobuf/BlockingService.java                 \
   java/core/src/main/java/com/google/protobuf/BooleanArrayList.java                \
+  java/core/src/main/java/com/google/protobuf/BufferAllocator.java                 \
   java/core/src/main/java/com/google/protobuf/ByteBufferWriter.java                \
   java/core/src/main/java/com/google/protobuf/ByteOutput.java                      \
   java/core/src/main/java/com/google/protobuf/ByteString.java                      \
   java/core/src/main/java/com/google/protobuf/CodedInputStream.java                \
+  java/core/src/main/java/com/google/protobuf/CodedInputStreamReader.java          \
   java/core/src/main/java/com/google/protobuf/CodedOutputStream.java               \
-  java/core/src/main/java/com/google/protobuf/DiscardUnknownFieldsParser.java      \
+  java/core/src/main/java/com/google/protobuf/CodedOutputStreamWriter.java         \
+  java/core/src/main/java/com/google/protobuf/DescriptorMessageInfoFactory.java    \
   java/core/src/main/java/com/google/protobuf/Descriptors.java                     \
+  java/core/src/main/java/com/google/protobuf/DiscardUnknownFieldsParser.java      \
   java/core/src/main/java/com/google/protobuf/DoubleArrayList.java                 \
   java/core/src/main/java/com/google/protobuf/DynamicMessage.java                  \
   java/core/src/main/java/com/google/protobuf/ExperimentalApi.java                 \
@@ -230,37 +308,65 @@ java_EXTRA_DIST=                                                                
   java/core/src/main/java/com/google/protobuf/ExtensionRegistry.java               \
   java/core/src/main/java/com/google/protobuf/ExtensionRegistryFactory.java        \
   java/core/src/main/java/com/google/protobuf/ExtensionRegistryLite.java           \
+  java/core/src/main/java/com/google/protobuf/ExtensionSchema.java                 \
+  java/core/src/main/java/com/google/protobuf/ExtensionSchemaFull.java             \
+  java/core/src/main/java/com/google/protobuf/ExtensionSchemaLite.java             \
+  java/core/src/main/java/com/google/protobuf/ExtensionSchemas.java                \
+  java/core/src/main/java/com/google/protobuf/FieldInfo.java                       \
   java/core/src/main/java/com/google/protobuf/FieldSet.java                        \
+  java/core/src/main/java/com/google/protobuf/FieldType.java                       \
   java/core/src/main/java/com/google/protobuf/FloatArrayList.java                  \
   java/core/src/main/java/com/google/protobuf/GeneratedMessage.java                \
+  java/core/src/main/java/com/google/protobuf/GeneratedMessageInfoFactory.java     \
   java/core/src/main/java/com/google/protobuf/GeneratedMessageLite.java            \
   java/core/src/main/java/com/google/protobuf/GeneratedMessageV3.java              \
   java/core/src/main/java/com/google/protobuf/IntArrayList.java                    \
   java/core/src/main/java/com/google/protobuf/Internal.java                        \
   java/core/src/main/java/com/google/protobuf/InvalidProtocolBufferException.java  \
   java/core/src/main/java/com/google/protobuf/IterableByteBufferInputStream.java   \
+  java/core/src/main/java/com/google/protobuf/JavaType.java                        \
   java/core/src/main/java/com/google/protobuf/LazyField.java                       \
   java/core/src/main/java/com/google/protobuf/LazyFieldLite.java                   \
   java/core/src/main/java/com/google/protobuf/LazyStringArrayList.java             \
   java/core/src/main/java/com/google/protobuf/LazyStringList.java                  \
+  java/core/src/main/java/com/google/protobuf/ListFieldSchema.java                 \
   java/core/src/main/java/com/google/protobuf/LongArrayList.java                   \
+  java/core/src/main/java/com/google/protobuf/ManifestSchemaFactory.java           \
   java/core/src/main/java/com/google/protobuf/MapEntry.java                        \
   java/core/src/main/java/com/google/protobuf/MapEntryLite.java                    \
   java/core/src/main/java/com/google/protobuf/MapField.java                        \
   java/core/src/main/java/com/google/protobuf/MapFieldLite.java                    \
+  java/core/src/main/java/com/google/protobuf/MapFieldSchema.java                  \
+  java/core/src/main/java/com/google/protobuf/MapFieldSchemaFull.java              \
+  java/core/src/main/java/com/google/protobuf/MapFieldSchemaLite.java              \
+  java/core/src/main/java/com/google/protobuf/MapFieldSchemas.java                 \
   java/core/src/main/java/com/google/protobuf/Message.java                         \
+  java/core/src/main/java/com/google/protobuf/MessageInfo.java                     \
+  java/core/src/main/java/com/google/protobuf/MessageInfoFactory.java              \
   java/core/src/main/java/com/google/protobuf/MessageLite.java                     \
   java/core/src/main/java/com/google/protobuf/MessageLiteOrBuilder.java            \
   java/core/src/main/java/com/google/protobuf/MessageLiteToString.java             \
   java/core/src/main/java/com/google/protobuf/MessageOrBuilder.java                \
   java/core/src/main/java/com/google/protobuf/MessageReflection.java               \
+  java/core/src/main/java/com/google/protobuf/MessageSchema.java                   \
+  java/core/src/main/java/com/google/protobuf/MessageSetSchema.java                \
   java/core/src/main/java/com/google/protobuf/MutabilityOracle.java                \
+  java/core/src/main/java/com/google/protobuf/NewInstanceSchema.java               \
+  java/core/src/main/java/com/google/protobuf/NewInstanceSchemaFull.java           \
+  java/core/src/main/java/com/google/protobuf/NewInstanceSchemaLite.java           \
+  java/core/src/main/java/com/google/protobuf/NewInstanceSchemas.java              \
   java/core/src/main/java/com/google/protobuf/NioByteString.java                   \
+  java/core/src/main/java/com/google/protobuf/OneofInfo.java                       \
   java/core/src/main/java/com/google/protobuf/Parser.java                          \
   java/core/src/main/java/com/google/protobuf/PrimitiveNonBoxingCollection.java    \
+  java/core/src/main/java/com/google/protobuf/ProtoSyntax.java                     \
+  java/core/src/main/java/com/google/protobuf/Protobuf.java                        \
   java/core/src/main/java/com/google/protobuf/ProtobufArrayList.java               \
+  java/core/src/main/java/com/google/protobuf/ProtobufLists.java                   \
   java/core/src/main/java/com/google/protobuf/ProtocolMessageEnum.java             \
   java/core/src/main/java/com/google/protobuf/ProtocolStringList.java              \
+  java/core/src/main/java/com/google/protobuf/RawMessageInfo.java                  \
+  java/core/src/main/java/com/google/protobuf/Reader.java                          \
   java/core/src/main/java/com/google/protobuf/RepeatedFieldBuilder.java            \
   java/core/src/main/java/com/google/protobuf/RepeatedFieldBuilderV3.java          \
   java/core/src/main/java/com/google/protobuf/RopeByteString.java                  \
@@ -268,30 +374,48 @@ java_EXTRA_DIST=                                                                
   java/core/src/main/java/com/google/protobuf/RpcChannel.java                      \
   java/core/src/main/java/com/google/protobuf/RpcController.java                   \
   java/core/src/main/java/com/google/protobuf/RpcUtil.java                         \
+  java/core/src/main/java/com/google/protobuf/Schema.java                          \
+  java/core/src/main/java/com/google/protobuf/SchemaFactory.java                   \
+  java/core/src/main/java/com/google/protobuf/SchemaUtil.java                      \
   java/core/src/main/java/com/google/protobuf/Service.java                         \
   java/core/src/main/java/com/google/protobuf/ServiceException.java                \
   java/core/src/main/java/com/google/protobuf/SingleFieldBuilder.java              \
   java/core/src/main/java/com/google/protobuf/SingleFieldBuilderV3.java            \
   java/core/src/main/java/com/google/protobuf/SmallSortedMap.java                  \
+  java/core/src/main/java/com/google/protobuf/StructuralMessageInfo.java           \
   java/core/src/main/java/com/google/protobuf/TextFormat.java                      \
   java/core/src/main/java/com/google/protobuf/TextFormatEscaper.java               \
   java/core/src/main/java/com/google/protobuf/TextFormatParseInfoTree.java         \
   java/core/src/main/java/com/google/protobuf/TextFormatParseLocation.java         \
+  java/core/src/main/java/com/google/protobuf/TypeRegistry.java                    \
   java/core/src/main/java/com/google/protobuf/UninitializedMessageException.java   \
+  java/core/src/main/java/com/google/protobuf/UnknownFieldSchema.java              \
   java/core/src/main/java/com/google/protobuf/UnknownFieldSet.java                 \
   java/core/src/main/java/com/google/protobuf/UnknownFieldSetLite.java             \
+  java/core/src/main/java/com/google/protobuf/UnknownFieldSetLiteSchema.java       \
+  java/core/src/main/java/com/google/protobuf/UnknownFieldSetSchema.java           \
   java/core/src/main/java/com/google/protobuf/UnmodifiableLazyStringList.java      \
   java/core/src/main/java/com/google/protobuf/UnsafeByteOperations.java            \
   java/core/src/main/java/com/google/protobuf/UnsafeUtil.java                      \
   java/core/src/main/java/com/google/protobuf/Utf8.java                            \
   java/core/src/main/java/com/google/protobuf/WireFormat.java                      \
+  java/core/src/main/java/com/google/protobuf/Writer.java                          \
   java/core/src/test/java/com/google/protobuf/AbstractMessageTest.java             \
+  java/core/src/test/java/com/google/protobuf/AbstractProto2LiteSchemaTest.java    \
+  java/core/src/test/java/com/google/protobuf/AbstractProto2SchemaTest.java        \
+  java/core/src/test/java/com/google/protobuf/AbstractProto3LiteSchemaTest.java    \
+  java/core/src/test/java/com/google/protobuf/AbstractProto3SchemaTest.java        \
+  java/core/src/test/java/com/google/protobuf/AbstractSchemaTest.java              \
   java/core/src/test/java/com/google/protobuf/AnyTest.java                         \
+  java/core/src/test/java/com/google/protobuf/ArrayDecodersTest.java               \
+  java/core/src/test/java/com/google/protobuf/BinaryProtocolTest.java              \
   java/core/src/test/java/com/google/protobuf/BooleanArrayListTest.java            \
   java/core/src/test/java/com/google/protobuf/BoundedByteStringTest.java           \
   java/core/src/test/java/com/google/protobuf/ByteBufferWriterTest.java            \
   java/core/src/test/java/com/google/protobuf/ByteStringTest.java                  \
+  java/core/src/test/java/com/google/protobuf/CachedFieldSizeTest.java             \
   java/core/src/test/java/com/google/protobuf/CheckUtf8Test.java                   \
+  java/core/src/test/java/com/google/protobuf/CodedAdapterTest.java                \
   java/core/src/test/java/com/google/protobuf/CodedInputStreamTest.java            \
   java/core/src/test/java/com/google/protobuf/CodedOutputStreamTest.java           \
   java/core/src/test/java/com/google/protobuf/DecodeUtf8Test.java                  \
@@ -301,6 +425,9 @@ java_EXTRA_DIST=                                                                
   java/core/src/test/java/com/google/protobuf/DoubleArrayListTest.java             \
   java/core/src/test/java/com/google/protobuf/DynamicMessageTest.java              \
   java/core/src/test/java/com/google/protobuf/EnumTest.java                        \
+  java/core/src/test/java/com/google/protobuf/ExperimentalMessageFactory.java      \
+  java/core/src/test/java/com/google/protobuf/ExperimentalSerializationUtil.java   \
+  java/core/src/test/java/com/google/protobuf/ExperimentalTestDataProvider.java    \
   java/core/src/test/java/com/google/protobuf/ExtensionRegistryFactoryTest.java    \
   java/core/src/test/java/com/google/protobuf/FieldPresenceTest.java               \
   java/core/src/test/java/com/google/protobuf/FloatArrayListTest.java              \
@@ -315,17 +442,32 @@ java_EXTRA_DIST=                                                                
   java/core/src/test/java/com/google/protobuf/LazyStringArrayListTest.java         \
   java/core/src/test/java/com/google/protobuf/LazyStringEndToEndTest.java          \
   java/core/src/test/java/com/google/protobuf/LiteEqualsAndHashTest.java           \
-  java/core/src/test/java/com/google/protobuf/LiteTest.java                        \
   java/core/src/test/java/com/google/protobuf/LiteralByteStringTest.java           \
   java/core/src/test/java/com/google/protobuf/LongArrayListTest.java               \
   java/core/src/test/java/com/google/protobuf/MapForProto2LiteTest.java            \
   java/core/src/test/java/com/google/protobuf/MapForProto2Test.java                \
+  java/core/src/test/java/com/google/protobuf/MapLiteTest.java                     \
   java/core/src/test/java/com/google/protobuf/MapTest.java                         \
   java/core/src/test/java/com/google/protobuf/MessageTest.java                     \
   java/core/src/test/java/com/google/protobuf/NestedBuildersTest.java              \
   java/core/src/test/java/com/google/protobuf/NioByteStringTest.java               \
+  java/core/src/test/java/com/google/protobuf/PackedFieldTest.java                 \
   java/core/src/test/java/com/google/protobuf/ParseExceptionsTest.java             \
+  java/core/src/test/java/com/google/protobuf/ParserLiteTest.java                  \
   java/core/src/test/java/com/google/protobuf/ParserTest.java                      \
+  java/core/src/test/java/com/google/protobuf/Proto2ExtensionLookupSchemaTest.java \
+  java/core/src/test/java/com/google/protobuf/Proto2LiteSchemaTest.java            \
+  java/core/src/test/java/com/google/protobuf/Proto2MessageFactory.java            \
+  java/core/src/test/java/com/google/protobuf/Proto2MessageInfoFactory.java        \
+  java/core/src/test/java/com/google/protobuf/Proto2MessageLiteFactory.java        \
+  java/core/src/test/java/com/google/protobuf/Proto2SchemaTest.java                \
+  java/core/src/test/java/com/google/protobuf/Proto2UnknownEnumValueTest.java      \
+  java/core/src/test/java/com/google/protobuf/Proto3LiteSchemaTest.java            \
+  java/core/src/test/java/com/google/protobuf/Proto3MessageFactory.java            \
+  java/core/src/test/java/com/google/protobuf/Proto3MessageInfoFactory.java        \
+  java/core/src/test/java/com/google/protobuf/Proto3MessageLiteFactory.java        \
+  java/core/src/test/java/com/google/protobuf/Proto3MessageLiteInfoFactory.java    \
+  java/core/src/test/java/com/google/protobuf/Proto3SchemaTest.java                \
   java/core/src/test/java/com/google/protobuf/ProtobufArrayListTest.java           \
   java/core/src/test/java/com/google/protobuf/RepeatedFieldBuilderV3Test.java      \
   java/core/src/test/java/com/google/protobuf/RopeByteStringSubstringTest.java     \
@@ -335,18 +477,26 @@ java_EXTRA_DIST=                                                                
   java/core/src/test/java/com/google/protobuf/SmallSortedMapTest.java              \
   java/core/src/test/java/com/google/protobuf/TestBadIdentifiers.java              \
   java/core/src/test/java/com/google/protobuf/TestBadIdentifiersLite.java          \
+  java/core/src/test/java/com/google/protobuf/TestSchemas.java                     \
+  java/core/src/test/java/com/google/protobuf/TestSchemasLite.java                 \
   java/core/src/test/java/com/google/protobuf/TestUtil.java                        \
   java/core/src/test/java/com/google/protobuf/TestUtilLite.java                    \
   java/core/src/test/java/com/google/protobuf/TextFormatParseInfoTreeTest.java     \
   java/core/src/test/java/com/google/protobuf/TextFormatParseLocationTest.java     \
   java/core/src/test/java/com/google/protobuf/TextFormatTest.java                  \
+  java/core/src/test/java/com/google/protobuf/TypeRegistryTest.java                \
   java/core/src/test/java/com/google/protobuf/UnknownEnumValueTest.java            \
-  java/core/src/test/java/com/google/protobuf/UnknownFieldSetLiteTest.java         \
   java/core/src/test/java/com/google/protobuf/UnknownFieldSetTest.java             \
   java/core/src/test/java/com/google/protobuf/UnmodifiableLazyStringListTest.java  \
+  java/core/src/test/java/com/google/protobuf/Utf8Test.java                        \
+  java/core/src/test/java/com/google/protobuf/Utf8Utils.java                       \
   java/core/src/test/java/com/google/protobuf/WellKnownTypesTest.java              \
+  java/core/src/test/java/com/google/protobuf/WireFormatLiteTest.java              \
   java/core/src/test/java/com/google/protobuf/WireFormatTest.java                  \
+  java/core/src/test/java/com/google/protobuf/WrappersLiteOfMethodTest.java        \
+  java/core/src/test/java/com/google/protobuf/WrappersOfMethodTest.java            \
   java/core/src/test/proto/com/google/protobuf/any_test.proto                      \
+  java/core/src/test/proto/com/google/protobuf/cached_field_size_test.proto        \
   java/core/src/test/proto/com/google/protobuf/deprecated_file.proto               \
   java/core/src/test/proto/com/google/protobuf/field_presence_test.proto           \
   java/core/src/test/proto/com/google/protobuf/lazy_fields_lite.proto              \
@@ -356,6 +506,7 @@ java_EXTRA_DIST=                                                                
   java/core/src/test/proto/com/google/protobuf/map_initialization_order_test.proto \
   java/core/src/test/proto/com/google/protobuf/map_lite_test.proto                 \
   java/core/src/test/proto/com/google/protobuf/map_test.proto                      \
+  java/core/src/test/proto/com/google/protobuf/message_lite_extension_util_test.proto\
   java/core/src/test/proto/com/google/protobuf/multiple_files_test.proto           \
   java/core/src/test/proto/com/google/protobuf/nested_builders_test.proto          \
   java/core/src/test/proto/com/google/protobuf/nested_extension.proto              \
@@ -365,27 +516,49 @@ java_EXTRA_DIST=                                                                
   java/core/src/test/proto/com/google/protobuf/outer_class_name_test.proto         \
   java/core/src/test/proto/com/google/protobuf/outer_class_name_test2.proto        \
   java/core/src/test/proto/com/google/protobuf/outer_class_name_test3.proto        \
+  java/core/src/test/proto/com/google/protobuf/packed_field_test.proto             \
+  java/core/src/test/proto/com/google/protobuf/proto2_message.proto                \
+  java/core/src/test/proto/com/google/protobuf/proto2_message_lite.proto           \
+  java/core/src/test/proto/com/google/protobuf/proto2_unknown_enum_values.proto    \
+  java/core/src/test/proto/com/google/protobuf/proto3_message.proto                \
+  java/core/src/test/proto/com/google/protobuf/proto3_message_lite.proto           \
   java/core/src/test/proto/com/google/protobuf/test_bad_identifiers.proto          \
   java/core/src/test/proto/com/google/protobuf/test_check_utf8.proto               \
   java/core/src/test/proto/com/google/protobuf/test_check_utf8_size.proto          \
   java/core/src/test/proto/com/google/protobuf/test_custom_options.proto           \
   java/core/src/test/proto/com/google/protobuf/test_extra_interfaces.proto         \
+  java/core/src/test/proto/com/google/protobuf/wrappers_test.proto                 \
   java/lite.md                                                                     \
+  java/lite/BUILD                                                                  \
+  java/lite/generate-sources-build.xml                                             \
+  java/lite/generate-test-sources-build.xml                                        \
+  java/lite/lite.awk                                                               \
+  java/lite/pom.xml                                                                \
+  java/lite/process-lite-sources-build.xml                                         \
+  java/lite/src/test/java/com/google/protobuf/LiteTest.java                        \
+  java/lite/src/test/java/com/google/protobuf/Proto2MessageLiteInfoFactory.java    \
   java/pom.xml                                                                     \
+  java/util/BUILD                                                                  \
   java/util/pom.xml                                                                \
   java/util/src/main/java/com/google/protobuf/util/Durations.java                  \
   java/util/src/main/java/com/google/protobuf/util/FieldMaskTree.java              \
   java/util/src/main/java/com/google/protobuf/util/FieldMaskUtil.java              \
   java/util/src/main/java/com/google/protobuf/util/JsonFormat.java                 \
   java/util/src/main/java/com/google/protobuf/util/TimeUtil.java                   \
+  java/util/src/main/java/com/google/protobuf/util/Structs.java                    \
   java/util/src/main/java/com/google/protobuf/util/Timestamps.java                 \
+  java/util/src/main/java/com/google/protobuf/util/Values.java                     \
   java/util/src/test/java/com/google/protobuf/util/FieldMaskTreeTest.java          \
   java/util/src/test/java/com/google/protobuf/util/FieldMaskUtilTest.java          \
   java/util/src/test/java/com/google/protobuf/util/JsonFormatTest.java             \
+  java/util/src/test/java/com/google/protobuf/util/StructsTest.java                \
   java/util/src/test/java/com/google/protobuf/util/TimeUtilTest.java               \
+  java/util/src/test/java/com/google/protobuf/util/ValuesTest.java                 \
   java/util/src/test/proto/com/google/protobuf/util/json_test.proto
 
 objectivec_EXTRA_DIST=                                                       \
+  objectivec/.clang-format                                                   \
+  objectivec/BUILD                                                           \
   objectivec/DevTools/check_version_stamps.sh                                \
   objectivec/DevTools/compile_testing_protos.sh                              \
   objectivec/DevTools/full_mac_build.sh                                      \
@@ -393,25 +566,19 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/DevTools/pddm_tests.py                                          \
   objectivec/generate_well_known_types.sh                                    \
   objectivec/google/protobuf/Any.pbobjc.h                                    \
-  objectivec/google/protobuf/Any.pbobjc.m                                    \
   objectivec/google/protobuf/Api.pbobjc.h                                    \
-  objectivec/google/protobuf/Api.pbobjc.m                                    \
   objectivec/google/protobuf/Duration.pbobjc.h                               \
-  objectivec/google/protobuf/Duration.pbobjc.m                               \
   objectivec/google/protobuf/Empty.pbobjc.h                                  \
-  objectivec/google/protobuf/Empty.pbobjc.m                                  \
   objectivec/google/protobuf/FieldMask.pbobjc.h                              \
-  objectivec/google/protobuf/FieldMask.pbobjc.m                              \
   objectivec/google/protobuf/SourceContext.pbobjc.h                          \
-  objectivec/google/protobuf/SourceContext.pbobjc.m                          \
   objectivec/google/protobuf/Struct.pbobjc.h                                 \
-  objectivec/google/protobuf/Struct.pbobjc.m                                 \
   objectivec/google/protobuf/Timestamp.pbobjc.h                              \
-  objectivec/google/protobuf/Timestamp.pbobjc.m                              \
   objectivec/google/protobuf/Type.pbobjc.h                                   \
-  objectivec/google/protobuf/Type.pbobjc.m                                   \
   objectivec/google/protobuf/Wrappers.pbobjc.h                               \
-  objectivec/google/protobuf/Wrappers.pbobjc.m                               \
+  objectivec/GPBAny.pbobjc.h                                                 \
+  objectivec/GPBAny.pbobjc.m                                                 \
+  objectivec/GPBApi.pbobjc.h                                                 \
+  objectivec/GPBApi.pbobjc.m                                                 \
   objectivec/GPBArray.h                                                      \
   objectivec/GPBArray.m                                                      \
   objectivec/GPBArray_PackagePrivate.h                                       \
@@ -428,10 +595,16 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/GPBDictionary.h                                                 \
   objectivec/GPBDictionary.m                                                 \
   objectivec/GPBDictionary_PackagePrivate.h                                  \
+  objectivec/GPBDuration.pbobjc.h                                            \
+  objectivec/GPBDuration.pbobjc.m                                            \
+  objectivec/GPBEmpty.pbobjc.h                                               \
+  objectivec/GPBEmpty.pbobjc.m                                               \
   objectivec/GPBExtensionInternals.h                                         \
   objectivec/GPBExtensionInternals.m                                         \
   objectivec/GPBExtensionRegistry.h                                          \
   objectivec/GPBExtensionRegistry.m                                          \
+  objectivec/GPBFieldMask.pbobjc.h                                           \
+  objectivec/GPBFieldMask.pbobjc.m                                           \
   objectivec/GPBMessage.h                                                    \
   objectivec/GPBMessage.m                                                    \
   objectivec/GPBMessage_PackagePrivate.h                                     \
@@ -442,6 +615,14 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/GPBRootObject.m                                                 \
   objectivec/GPBRootObject_PackagePrivate.h                                  \
   objectivec/GPBRuntimeTypes.h                                               \
+  objectivec/GPBSourceContext.pbobjc.h                                       \
+  objectivec/GPBSourceContext.pbobjc.m                                       \
+  objectivec/GPBStruct.pbobjc.h                                              \
+  objectivec/GPBStruct.pbobjc.m                                              \
+  objectivec/GPBTimestamp.pbobjc.h                                           \
+  objectivec/GPBTimestamp.pbobjc.m                                           \
+  objectivec/GPBType.pbobjc.h                                                \
+  objectivec/GPBType.pbobjc.m                                                \
   objectivec/GPBUnknownField.h                                               \
   objectivec/GPBUnknownField.m                                               \
   objectivec/GPBUnknownField_PackagePrivate.h                                \
@@ -455,6 +636,8 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/GPBWellKnownTypes.m                                             \
   objectivec/GPBWireFormat.h                                                 \
   objectivec/GPBWireFormat.m                                                 \
+  objectivec/GPBWrappers.pbobjc.h                                            \
+  objectivec/GPBWrappers.pbobjc.m                                            \
   objectivec/ProtocolBuffers_iOS.xcodeproj/project.pbxproj                   \
   objectivec/ProtocolBuffers_iOS.xcodeproj/project.xcworkspace/contents.xcworkspacedata \
   objectivec/ProtocolBuffers_iOS.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist \
@@ -467,6 +650,12 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/ProtocolBuffers_OSX.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings \
   objectivec/ProtocolBuffers_OSX.xcodeproj/xcshareddata/xcschemes/PerformanceTests.xcscheme \
   objectivec/ProtocolBuffers_OSX.xcodeproj/xcshareddata/xcschemes/ProtocolBuffers.xcscheme \
+  objectivec/ProtocolBuffers_tvOS.xcodeproj/project.pbxproj                  \
+  objectivec/ProtocolBuffers_tvOS.xcodeproj/project.xcworkspace/contents.xcworkspacedata \
+  objectivec/ProtocolBuffers_tvOS.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist \
+  objectivec/ProtocolBuffers_tvOS.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings \
+  objectivec/ProtocolBuffers_tvOS.xcodeproj/xcshareddata/xcschemes/PerformanceTests.xcscheme \
+  objectivec/ProtocolBuffers_tvOS.xcodeproj/xcshareddata/xcschemes/ProtocolBuffers.xcscheme \
   objectivec/README.md                                                       \
   objectivec/Tests/CocoaPods/OSXCocoaPodsTester/OSXCocoaPodsTester.xcodeproj/project.pbxproj \
   objectivec/Tests/CocoaPods/OSXCocoaPodsTester/OSXCocoaPodsTester.xcodeproj/project.xcworkspace/contents.xcworkspacedata \
@@ -537,6 +726,7 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/Tests/GPBDictionaryTests.m                                      \
   objectivec/Tests/GPBDictionaryTests.pddm                                   \
   objectivec/Tests/GPBExtensionRegistryTest.m                                \
+  objectivec/Tests/GPBMessageTests+ClassNames.m                              \
   objectivec/Tests/GPBMessageTests+Merge.m                                   \
   objectivec/Tests/GPBMessageTests+Runtime.m                                 \
   objectivec/Tests/GPBMessageTests+Serialization.m                           \
@@ -552,6 +742,7 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/Tests/GPBUtilitiesTests.m                                       \
   objectivec/Tests/GPBWellKnownTypesTest.m                                   \
   objectivec/Tests/GPBWireFormatTests.m                                      \
+  objectivec/Tests/text_format_extensions_unittest_data.txt                   \
   objectivec/Tests/text_format_map_unittest_data.txt                          \
   objectivec/Tests/text_format_unittest_data.txt                              \
   objectivec/Tests/unittest_cycle.proto                                       \
@@ -565,6 +756,7 @@ objectivec_EXTRA_DIST=                                                       \
   objectivec/Tests/unittest_extension_chain_f.proto                           \
   objectivec/Tests/unittest_extension_chain_g.proto                           \
   objectivec/Tests/unittest_objc.proto                                        \
+  objectivec/Tests/unittest_objc_options.proto                                \
   objectivec/Tests/unittest_objc_startup.proto                                \
   objectivec/Tests/unittest_runtime_proto2.proto                              \
   objectivec/Tests/unittest_runtime_proto3.proto                              \
@@ -576,23 +768,31 @@ php_EXTRA_DIST=                                                       \
   composer.json                                                       \
   php/README.md                                                       \
   php/composer.json                                                   \
+  php/ext/google/protobuf/arena.c                                     \
+  php/ext/google/protobuf/arena.h                                     \
   php/ext/google/protobuf/array.c                                     \
+  php/ext/google/protobuf/array.h                                     \
   php/ext/google/protobuf/config.m4                                   \
+  php/ext/google/protobuf/convert.c                                   \
+  php/ext/google/protobuf/convert.h                                   \
   php/ext/google/protobuf/def.c                                       \
-  php/ext/google/protobuf/encode_decode.c                             \
+  php/ext/google/protobuf/def.h                                       \
   php/ext/google/protobuf/map.c                                       \
+  php/ext/google/protobuf/map.h                                       \
   php/ext/google/protobuf/message.c                                   \
+  php/ext/google/protobuf/message.h                                   \
+  php/ext/google/protobuf/names.c                                     \
+  php/ext/google/protobuf/names.h                                     \
   php/ext/google/protobuf/package.xml                                 \
+  php/ext/google/protobuf/php-upb.c                                   \
+  php/ext/google/protobuf/php-upb.h                                   \
   php/ext/google/protobuf/protobuf.c                                  \
   php/ext/google/protobuf/protobuf.h                                  \
-  php/ext/google/protobuf/storage.c                                   \
-  php/ext/google/protobuf/type_check.c                                \
-  php/ext/google/protobuf/upb.c                                       \
-  php/ext/google/protobuf/upb.h                                       \
-  php/ext/google/protobuf/utf8.c                                      \
-  php/ext/google/protobuf/utf8.h                                      \
+  php/ext/google/protobuf/wkt.inc                                     \
   php/generate_descriptor_protos.sh                                   \
   php/phpunit.xml                                                     \
+  php/prepare_c_extension.sh                                          \
+  php/release.sh                                                      \
   php/src/GPBMetadata/Google/Protobuf/Any.php                         \
   php/src/GPBMetadata/Google/Protobuf/Api.php                         \
   php/src/GPBMetadata/Google/Protobuf/Duration.php                    \
@@ -627,6 +827,7 @@ php_EXTRA_DIST=                                                       \
   php/src/Google/Protobuf/GPBEmpty.php                                \
   php/src/Google/Protobuf/Int32Value.php                              \
   php/src/Google/Protobuf/Int64Value.php                              \
+  php/src/Google/Protobuf/Internal/AnyBase.php                        \
   php/src/Google/Protobuf/Internal/CodedInputStream.php               \
   php/src/Google/Protobuf/Internal/CodedOutputStream.php              \
   php/src/Google/Protobuf/Internal/Descriptor.php                     \
@@ -686,8 +887,21 @@ php_EXTRA_DIST=                                                       \
   php/src/Google/Protobuf/Internal/ServiceOptions.php                 \
   php/src/Google/Protobuf/Internal/SourceCodeInfo.php                 \
   php/src/Google/Protobuf/Internal/SourceCodeInfo/Location.php        \
+  php/src/Google/Protobuf/Internal/TimestampBase.php                  \
   php/src/Google/Protobuf/Internal/UninterpretedOption.php            \
   php/src/Google/Protobuf/Internal/UninterpretedOption/NamePart.php   \
+  php/src/Google/Protobuf/Internal/DescriptorProto_ExtensionRange.php \
+  php/src/Google/Protobuf/Internal/DescriptorProto_ReservedRange.php  \
+  php/src/Google/Protobuf/Internal/EnumDescriptorProto_EnumReservedRange.php \
+  php/src/Google/Protobuf/Internal/FieldDescriptorProto_Label.php     \
+  php/src/Google/Protobuf/Internal/FieldDescriptorProto_Type.php      \
+  php/src/Google/Protobuf/Internal/FieldOptions_CType.php             \
+  php/src/Google/Protobuf/Internal/FieldOptions_JSType.php            \
+  php/src/Google/Protobuf/Internal/FileOptions_OptimizeMode.php       \
+  php/src/Google/Protobuf/Internal/GeneratedCodeInfo_Annotation.php   \
+  php/src/Google/Protobuf/Internal/MethodOptions_IdempotencyLevel.php \
+  php/src/Google/Protobuf/Internal/SourceCodeInfo_Location.php        \
+  php/src/Google/Protobuf/Internal/UninterpretedOption_NamePart.php   \
   php/src/Google/Protobuf/ListValue.php                               \
   php/src/Google/Protobuf/Method.php                                  \
   php/src/Google/Protobuf/Mixin.php                                   \
@@ -704,19 +918,23 @@ php_EXTRA_DIST=                                                       \
   php/src/Google/Protobuf/UInt64Value.php                             \
   php/src/Google/Protobuf/Value.php                                   \
   php/src/phpdoc.dist.xml                                             \
-  php/tests/array_test.php                                            \
+  php/tests/ArrayTest.php                                             \
   php/tests/autoload.php                                              \
   php/tests/bootstrap_phpunit.php                                     \
   php/tests/compatibility_test.sh                                     \
-  php/tests/descriptors_test.php                                      \
-  php/tests/encode_decode_test.php                                    \
+  php/tests/compile_extension.sh                                      \
+  php/tests/DescriptorsTest.php                                       \
+  php/tests/EncodeDecodeTest.php                                      \
   php/tests/gdb_test.sh                                               \
-  php/tests/generated_class_test.php                                  \
-  php/tests/generated_phpdoc_test.php                                 \
-  php/tests/generated_service_test.php                                \
-  php/tests/map_field_test.php                                        \
+  php/tests/generate_protos.sh                                        \
+  php/tests/GeneratedClassTest.php                                    \
+  php/tests/GeneratedPhpdocTest.php                                   \
+  php/tests/GeneratedServiceTest.php                                  \
+  php/tests/MapFieldTest.php                                          \
   php/tests/memory_leak_test.php                                      \
-  php/tests/php_implementation_test.php                               \
+  php/tests/multirequest.php                                          \
+  php/tests/multirequest.sh                                           \
+  php/tests/PhpImplementationTest.php                                 \
   php/tests/proto/empty/echo.proto                                    \
   php/tests/proto/test.proto                                          \
   php/tests/proto/test_descriptors.proto                              \
@@ -734,11 +952,14 @@ php_EXTRA_DIST=                                                       \
   php/tests/proto/test_reserved_message_upper.proto                   \
   php/tests/proto/test_service.proto                                  \
   php/tests/proto/test_service_namespace.proto                        \
+  php/tests/proto/test_wrapper_type_setters.proto                     \
   php/tests/test.sh                                                   \
   php/tests/test_base.php                                             \
   php/tests/test_util.php                                             \
   php/tests/undefined_test.php                                        \
-  php/tests/well_known_test.php
+  php/tests/valgrind.supp                                             \
+  php/tests/WellKnownTest.php                                         \
+  php/tests/WrapperTypeSettersTest.php
 
 python_EXTRA_DIST=                                                           \
   python/MANIFEST.in                                                         \
@@ -763,6 +984,7 @@ python_EXTRA_DIST=                                                           \
   python/google/protobuf/internal/descriptor_test.py                         \
   python/google/protobuf/internal/encoder.py                                 \
   python/google/protobuf/internal/enum_type_wrapper.py                       \
+  python/google/protobuf/internal/extension_dict.py                          \
   python/google/protobuf/internal/factory_test1.proto                        \
   python/google/protobuf/internal/factory_test2.proto                        \
   python/google/protobuf/internal/file_options_test.proto                    \
@@ -771,6 +993,7 @@ python_EXTRA_DIST=                                                           \
   python/google/protobuf/internal/import_test_package/inner.proto            \
   python/google/protobuf/internal/import_test_package/outer.proto            \
   python/google/protobuf/internal/json_format_test.py                        \
+  python/google/protobuf/internal/keywords_test.py                           \
   python/google/protobuf/internal/message_factory_test.py                    \
   python/google/protobuf/internal/message_listener.py                        \
   python/google/protobuf/internal/message_set_extensions.proto               \
@@ -788,6 +1011,7 @@ python_EXTRA_DIST=                                                           \
   python/google/protobuf/internal/service_reflection_test.py                 \
   python/google/protobuf/internal/symbol_database_test.py                    \
   python/google/protobuf/internal/test_bad_identifiers.proto                 \
+  python/google/protobuf/internal/test_proto3_optional.proto                 \
   python/google/protobuf/internal/test_util.py                               \
   python/google/protobuf/internal/testing_refleaks.py                        \
   python/google/protobuf/internal/text_encoding_test.py                      \
@@ -804,6 +1028,7 @@ python_EXTRA_DIST=                                                           \
   python/google/protobuf/message.py                                          \
   python/google/protobuf/message_factory.py                                  \
   python/google/protobuf/python_protobuf.h                                   \
+  python/google/protobuf/proto_api.h                                         \
   python/google/protobuf/proto_builder.py                                    \
   python/google/protobuf/pyext/README                                        \
   python/google/protobuf/pyext/__init__.py                                   \
@@ -822,6 +1047,10 @@ python_EXTRA_DIST=                                                           \
   python/google/protobuf/pyext/map_container.h                               \
   python/google/protobuf/pyext/message.cc                                    \
   python/google/protobuf/pyext/message.h                                     \
+  python/google/protobuf/pyext/field.cc                                      \
+  python/google/protobuf/pyext/field.h                                       \
+  python/google/protobuf/pyext/unknown_fields.cc                             \
+  python/google/protobuf/pyext/unknown_fields.h                              \
   python/google/protobuf/pyext/message_factory.cc                            \
   python/google/protobuf/pyext/message_factory.h                             \
   python/google/protobuf/pyext/message_module.cc                             \
@@ -833,7 +1062,6 @@ python_EXTRA_DIST=                                                           \
   python/google/protobuf/pyext/repeated_scalar_container.h                   \
   python/google/protobuf/pyext/safe_numerics.h                               \
   python/google/protobuf/pyext/scoped_pyobject_ptr.h                         \
-  python/google/protobuf/pyext/thread_unsafe_shared_ptr.h                    \
   python/google/protobuf/reflection.py                                       \
   python/google/protobuf/service.py                                          \
   python/google/protobuf/service_reflection.py                               \
@@ -899,16 +1127,25 @@ ruby_EXTRA_DIST=                                                             \
   ruby/src/main/java/com/google/protobuf/jruby/Utils.java                    \
   ruby/src/main/java/google/ProtobufJavaService.java                         \
   ruby/src/main/sentinel.proto                                               \
+  ruby/tests/basic_proto2.rb                                                 \
+  ruby/tests/basic_test_proto2.proto                                         \
+  ruby/tests/basic_test.proto                                                \
   ruby/tests/basic.rb                                                        \
+  ruby/tests/common_tests.rb                                                 \
   ruby/tests/encode_decode_test.rb                                           \
   ruby/tests/gc_test.rb                                                      \
   ruby/tests/repeated_field_test.rb                                          \
   ruby/tests/stress.rb                                                       \
+  ruby/tests/generated_code_proto2_test.rb                                   \
+  ruby/tests/generated_code_proto2.proto                                     \
   ruby/tests/generated_code.proto                                            \
+  ruby/tests/test_import_proto2.proto                                        \
   ruby/tests/test_import.proto                                               \
+  ruby/tests/test_ruby_package_proto2.proto                                  \
   ruby/tests/test_ruby_package.proto                                         \
   ruby/tests/generated_code_test.rb                                          \
   ruby/tests/well_known_types_test.rb                                        \
+  ruby/tests/type_errors.rb                                                  \
   ruby/travis-test.sh
 
 js_EXTRA_DIST=                                                         \
@@ -933,6 +1170,7 @@ js_EXTRA_DIST=                                                         \
   js/commonjs/import_test.js                                           \
   js/commonjs/jasmine.json                                             \
   js/commonjs/rewrite_tests_for_commonjs.js                            \
+  js/commonjs/strict_test.js                                           \
   js/commonjs/test6/test6.proto                                        \
   js/commonjs/test7/test7.proto                                        \
   js/compatibility_tests/v3.0.0/binary/arith_test.js                   \
@@ -988,6 +1226,10 @@ js_EXTRA_DIST=                                                         \
   js/data.proto                                                        \
   js/debug.js                                                          \
   js/debug_test.js                                                     \
+  js/experimental/runtime/kernel/message_set.js                        \
+  js/experimental/runtime/kernel/message_set_test.js                   \
+  js/experimental/runtime/kernel/tag.js                                \
+  js/experimental/runtime/kernel/tag_test.js                           \
   js/gulpfile.js                                                       \
   js/jasmine.json                                                      \
   js/map.js                                                            \
@@ -1004,9 +1246,88 @@ js_EXTRA_DIST=                                                         \
   js/test4.proto                                                       \
   js/test5.proto                                                       \
   js/test8.proto                                                       \
+  js/test9.proto                                                       \
+  js/test10.proto                                                      \
+  js/test11.proto                                                      \
+  js/test12.proto                                                      \
+  js/test13.proto                                                      \
+  js/test14.proto                                                      \
+  js/test15.proto                                                      \
   js/test_bootstrap.js                                                 \
   js/testbinary.proto                                                  \
-  js/testempty.proto
+  js/testempty.proto                                                   \
+  js/testlargenumbers.proto                                            \
+  js/experimental/runtime/testing/jasmine_protobuf.js                  \
+  js/experimental/runtime/testing/ensure_custom_equality_test.js       \
+  js/experimental/runtime/testing/binary/test_message.js               \
+  js/experimental/runtime/kernel/writer_test.js                        \
+  js/experimental/runtime/kernel/writer.js                             \
+  js/experimental/runtime/kernel/wire_type.js                          \
+  js/experimental/runtime/kernel/uint8arrays_test.js                   \
+  js/experimental/runtime/kernel/uint8arrays.js                        \
+  js/experimental/runtime/kernel/uint32_test_pairs.js                  \
+  js/experimental/runtime/kernel/typed_arrays_test.js                  \
+  js/experimental/runtime/kernel/typed_arrays.js                       \
+  js/experimental/runtime/kernel/textencoding_test.js                  \
+  js/experimental/runtime/kernel/textencoding.js                       \
+  js/experimental/runtime/kernel/storage.js                            \
+  js/experimental/runtime/kernel/sint64_test_pairs.js                  \
+  js/experimental/runtime/kernel/sint32_test_pairs.js                  \
+  js/experimental/runtime/kernel/sfixed64_test_pairs.js                \
+  js/experimental/runtime/kernel/sfixed32_test_pairs.js                \
+  js/experimental/runtime/kernel/reader_test.js                        \
+  js/experimental/runtime/kernel/reader.js                             \
+  js/experimental/runtime/kernel/packed_uint32_test_pairs.js           \
+  js/experimental/runtime/kernel/packed_sint64_test_pairs.js           \
+  js/experimental/runtime/kernel/packed_sint32_test_pairs.js           \
+  js/experimental/runtime/kernel/packed_sfixed64_test_pairs.js         \
+  js/experimental/runtime/kernel/packed_sfixed32_test_pairs.js         \
+  js/experimental/runtime/kernel/packed_int64_test_pairs.js            \
+  js/experimental/runtime/kernel/packed_int32_test_pairs.js            \
+  js/experimental/runtime/kernel/packed_float_test_pairs.js            \
+  js/experimental/runtime/kernel/packed_fixed32_test_pairs.js          \
+  js/experimental/runtime/kernel/packed_double_test_pairs.js           \
+  js/experimental/runtime/kernel/packed_bool_test_pairs.js             \
+  js/experimental/runtime/kernel/kernel_test.js                        \
+  js/experimental/runtime/kernel/kernel_repeated_test.js               \
+  js/experimental/runtime/kernel/kernel_compatibility_test.js          \
+  js/experimental/runtime/kernel/kernel.js                             \
+  js/experimental/runtime/kernel/internal_message.js                   \
+  js/experimental/runtime/kernel/int64_test_pairs.js                   \
+  js/experimental/runtime/kernel/int32_test_pairs.js                   \
+  js/experimental/runtime/kernel/indexer_test.js                       \
+  js/experimental/runtime/kernel/indexer.js                            \
+  js/experimental/runtime/kernel/float_test_pairs.js                   \
+  js/experimental/runtime/kernel/fixed32_test_pairs.js                 \
+  js/experimental/runtime/kernel/field.js                              \
+  js/experimental/runtime/kernel/double_test_pairs.js                  \
+  js/experimental/runtime/kernel/conformance/wire_format.js            \
+  js/experimental/runtime/kernel/conformance/test_all_types_proto3.js  \
+  js/experimental/runtime/kernel/conformance/test_all_types_proto2.js  \
+  js/experimental/runtime/kernel/conformance/conformance_testee_runner_node.js \
+  js/experimental/runtime/kernel/conformance/conformance_testee.js     \
+  js/experimental/runtime/kernel/conformance/conformance_response.js   \
+  js/experimental/runtime/kernel/conformance/conformance_request.js    \
+  js/experimental/runtime/kernel/buffer_decoder_test.js                \
+  js/experimental/runtime/kernel/buffer_decoder_helper.js              \
+  js/experimental/runtime/kernel/buffer_decoder.js                     \
+  js/experimental/runtime/kernel/bool_test_pairs.js                    \
+  js/experimental/runtime/kernel/binary_storage_test.js                \
+  js/experimental/runtime/kernel/binary_storage.js                     \
+  js/experimental/runtime/internal/checks_test.js                      \
+  js/experimental/runtime/internal/checks.js                           \
+  js/experimental/runtime/int64_test.js                                \
+  js/experimental/runtime/int64.js                                     \
+  js/experimental/runtime/bytestring_test.js                           \
+  js/experimental/runtime/bytestring_internal.js                       \
+  js/experimental/runtime/bytestring.js                                \
+  js/experimental/benchmarks/code_size/kernel/popular_types.js         \
+  js/experimental/benchmarks/code_size/kernel/all_types.js             \
+  js/experimental/benchmarks/code_size/code_size_base.js               \
+  js/experimental/benchmarks/code_size/apps_jspb/popular_types_proto3.js \
+  js/experimental/benchmarks/code_size/apps_jspb/popular_types_proto2.js \
+  js/experimental/benchmarks/code_size/apps_jspb/all_types_proto3.js \
+  js/experimental/benchmarks/code_size/apps_jspb/all_types_proto2.js
 
 all_EXTRA_DIST=$(csharp_EXTRA_DIST) $(java_EXTRA_DIST) $(objectivec_EXTRA_DIST) $(php_EXTRA_DIST) $(python_EXTRA_DIST) $(ruby_EXTRA_DIST) $(js_EXTRA_DIST)
 
@@ -1022,6 +1343,7 @@ EXTRA_DIST = $(@DIST_LANG@_EXTRA_DIST)   \
   WORKSPACE                              \
   cmake/CMakeLists.txt                   \
   cmake/README.md                        \
+  cmake/conformance.cmake                \
   cmake/examples.cmake                   \
   cmake/extract_includes.bat.in          \
   cmake/install.cmake                    \
@@ -1036,6 +1358,10 @@ EXTRA_DIST = $(@DIST_LANG@_EXTRA_DIST)   \
   cmake/protobuf.pc.cmake                \
   cmake/protoc.cmake                     \
   cmake/tests.cmake                      \
+  cmake/version.rc.in                    \
+  compiler_config_setting.bzl            \
+  build_files_updated_unittest.sh        \
+  cc_proto_blacklist_test.bzl            \
   editors/README.txt                     \
   editors/proto.vim                      \
   editors/protobuf-mode.el               \
@@ -1047,20 +1373,27 @@ EXTRA_DIST = $(@DIST_LANG@_EXTRA_DIST)   \
   examples/README.md                     \
   examples/WORKSPACE                     \
   examples/add_person.cc                 \
+  examples/add_person.dart               \
   examples/add_person.go                 \
   examples/add_person.py                 \
   examples/add_person_test.go            \
   examples/addressbook.proto             \
   examples/list_people.cc                \
+  examples/list_people.dart              \
   examples/list_people.go                \
   examples/list_people.py                \
   examples/list_people_test.go           \
+  examples/pubspec.yaml                  \
   protobuf.bzl                           \
+  protobuf_deps.bzl                      \
   python/release/wheel/build_wheel_manylinux.sh  \
   python/release/wheel/Dockerfile                \
   python/release/wheel/protobuf_optimized_pip.sh \
   python/release/wheel/README.md         \
-  six.BUILD                              \
+  third_party/six.BUILD                  \
+  third_party/zlib.BUILD                 \
+  third_party/wyhash/LICENSE             \
+  third_party/wyhash/wyhash.h            \
   util/python/BUILD
 
 

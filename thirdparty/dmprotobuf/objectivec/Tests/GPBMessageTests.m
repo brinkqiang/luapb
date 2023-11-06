@@ -40,6 +40,7 @@
 #import "GPBUnknownFieldSet_PackagePrivate.h"
 #import "google/protobuf/Unittest.pbobjc.h"
 #import "google/protobuf/UnittestObjc.pbobjc.h"
+#import "google/protobuf/UnittestObjcOptions.pbobjc.h"
 
 @interface MessageTests : GPBTestCase
 @end
@@ -337,14 +338,38 @@
 }
 
 - (void)testCoding {
+  GPBMessage *original = [self mergeResult];
   NSData *data =
-      [NSKeyedArchiver archivedDataWithRootObject:[self mergeResult]];
+      [NSKeyedArchiver archivedDataWithRootObject:original];
   id unarchivedObject = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 
-  XCTAssertEqualObjects(unarchivedObject, [self mergeResult]);
+  XCTAssertEqualObjects(unarchivedObject, original);
 
   // Intentionally doing a pointer comparison.
-  XCTAssertNotEqual(unarchivedObject, [self mergeResult]);
+  XCTAssertNotEqual(unarchivedObject, original);
+}
+
+- (void)testSecureCoding {
+  GPBMessage *original = [self mergeResult];
+
+  NSString *key = @"testing123";
+
+  NSMutableData *data = [NSMutableData data];
+  NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:data];
+  [archiver setRequiresSecureCoding:YES];
+  [archiver encodeObject:original forKey:key];
+  [archiver finishEncoding];
+
+  NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
+  [unarchiver setRequiresSecureCoding:YES];
+  id unarchivedObject = [unarchiver decodeObjectOfClass:[GPBMessage class]
+                                                 forKey:key];
+  [unarchiver finishDecoding];
+
+  XCTAssertEqualObjects(unarchivedObject, original);
+
+  // Intentionally doing a pointer comparison.
+  XCTAssertNotEqual(unarchivedObject, original);
 }
 
 - (void)testObjectReset {
@@ -1106,10 +1131,10 @@
     XCTAssertNotNil(message.a.iArray);
     XCTAssertFalse([message hasA]);
     GPBInt32Array *iArray = [message.a.iArray retain];
-    XCTAssertEqual(iArray->_autocreator, message.a);  // Pointer comparision
+    XCTAssertEqual(iArray->_autocreator, message.a);  // Pointer comparison
     message.a.iArray = [GPBInt32Array arrayWithValue:1];
     XCTAssertTrue([message hasA]);
-    XCTAssertNotEqual(message.a.iArray, iArray);  // Pointer comparision
+    XCTAssertNotEqual(message.a.iArray, iArray);  // Pointer comparison
     XCTAssertNil(iArray->_autocreator);
     [iArray release];
   }
@@ -1123,10 +1148,10 @@
     GPBAutocreatedArray *strArray =
         (GPBAutocreatedArray *)[message.a.strArray retain];
     XCTAssertTrue([strArray isKindOfClass:[GPBAutocreatedArray class]]);
-    XCTAssertEqual(strArray->_autocreator, message.a);  // Pointer comparision
+    XCTAssertEqual(strArray->_autocreator, message.a);  // Pointer comparison
     message.a.strArray = [NSMutableArray arrayWithObject:@"foo"];
     XCTAssertTrue([message hasA]);
-    XCTAssertNotEqual(message.a.strArray, strArray);  // Pointer comparision
+    XCTAssertNotEqual(message.a.strArray, strArray);  // Pointer comparison
     XCTAssertNil(strArray->_autocreator);
     [strArray release];
   }
@@ -1323,11 +1348,11 @@
     XCTAssertNotNil(message.a.iToI);
     XCTAssertFalse([message hasA]);
     GPBInt32Int32Dictionary *iToI = [message.a.iToI retain];
-    XCTAssertEqual(iToI->_autocreator, message.a);  // Pointer comparision
+    XCTAssertEqual(iToI->_autocreator, message.a);  // Pointer comparison
     message.a.iToI = [[[GPBInt32Int32Dictionary alloc] init] autorelease];
     [message.a.iToI setInt32:6 forKey:7];
     XCTAssertTrue([message hasA]);
-    XCTAssertNotEqual(message.a.iToI, iToI);  // Pointer comparision
+    XCTAssertNotEqual(message.a.iToI, iToI);  // Pointer comparison
     XCTAssertNil(iToI->_autocreator);
     [iToI release];
   }
@@ -1341,11 +1366,11 @@
     GPBAutocreatedDictionary *strToStr =
         (GPBAutocreatedDictionary *)[message.a.strToStr retain];
     XCTAssertTrue([strToStr isKindOfClass:[GPBAutocreatedDictionary class]]);
-    XCTAssertEqual(strToStr->_autocreator, message.a);  // Pointer comparision
+    XCTAssertEqual(strToStr->_autocreator, message.a);  // Pointer comparison
     message.a.strToStr =
         [NSMutableDictionary dictionaryWithObject:@"abc" forKey:@"def"];
     XCTAssertTrue([message hasA]);
-    XCTAssertNotEqual(message.a.strToStr, strToStr);  // Pointer comparision
+    XCTAssertNotEqual(message.a.strToStr, strToStr);  // Pointer comparison
     XCTAssertNil(strToStr->_autocreator);
     [strToStr release];
   }
@@ -1893,7 +1918,7 @@
   aTime = Time_SomethingElse;
   Time_IsValidValue(aTime);
 
-  // This block confirms the names in the decriptors is what we wanted.
+  // This block confirms the names in the descriptors is what we wanted.
 
   GPBEnumDescriptor *descriptor;
   NSString *valueName;
@@ -1980,8 +2005,53 @@
                  EnumTestMsg_MyEnum_NegTwo);
 }
 
+- (void)testReservedWordNaming {
+  // objectivec_helpers.cc has some special handing to make sure that
+  // some "reserved" objc names get renamed in a way so they
+  // don't conflict.
+  //
+  // This "test" confirms that the expected names are generated,
+  // otherwise the test itself will fail to compile.
+  self_Class *msg = [self_Class message];
+
+  // Some ObjC/C/C++ keywords.
+  msg.className_p = msg.hasClassName_p;
+  msg.cmd = msg.hasCmd;
+  msg.nullable_p = msg.hasNullable_p;
+  msg.typeof_p = msg.hasTypeof_p;
+  msg.instancetype_p = msg.hasInstancetype_p;
+  msg.nil_p = msg.hasNil_p;
+  msg.instancetype_p = msg.hasInstancetype_p;
+  msg.public_p = msg.hasPublic_p;
+
+  // Some that would override NSObject methods
+  msg.camltype = msg.hasCamltype;
+  msg.isNsdictionary = msg.hasIsNsdictionary;
+  msg.dealloc_p = msg.hasDealloc_p;
+  msg.zone_p = msg.hasZone_p;
+  msg.accessibilityLabel_p = msg.hasAccessibilityLabel_p;
+
+  // Some that we shouldn't need to handle.
+  msg.atomic = msg.hasAtomic;
+  msg.nonatomic = msg.hasNonatomic;
+  msg.strong = msg.hasStrong;
+  msg.nullResettable = msg.hasNullResettable;
+
+  // Some that would override GPBMessage methods
+  msg.clear_p = msg.hasClear_p;
+  msg.data_p = msg.hasData_p;
+
+  // Some MacTypes
+  msg.fixed = msg.hasFixed;
+  msg.style = msg.hasStyle;
+
+  // Some C Identifiers
+  msg.generic = msg.hasGeneric;
+  msg.block = msg.hasBlock;
+}
+
 - (void)testOneBasedEnumHolder {
-  // Test case for https://github.com/google/protobuf/issues/1453
+  // Test case for https://github.com/protocolbuffers/protobuf/issues/1453
   // Message with no explicit defaults, but a non zero default for an enum.
   MessageWithOneBasedEnum *enumMsg = [MessageWithOneBasedEnum message];
   XCTAssertEqual(enumMsg.enumField, MessageWithOneBasedEnum_OneBasedEnum_One);
@@ -2052,7 +2122,7 @@
   XCTAssertEqual([msg1 hash], [msg1Prime hash]);
 }
 
-- (void)testCopyingMapFileds {
+- (void)testCopyingMapFields {
   TestMessageOfMaps *msg = [TestMessageOfMaps message];
 
   msg.strToStr[@"foo"] = @"bar";
@@ -2101,6 +2171,40 @@
   XCTAssertEqualObjects([msg.intToMsg objectForKey:222], [msg2.intToMsg objectForKey:222]);
   XCTAssertTrue([msg.boolToMsg objectForKey:YES] != [msg2.boolToMsg objectForKey:YES]);  // ptr compare
   XCTAssertEqualObjects([msg.boolToMsg objectForKey:YES], [msg2.boolToMsg objectForKey:YES]);
+}
+
+- (void)testPrefixedNames {
+  // The fact that this compiles is sufficient as a test.
+  // The assertions are just there to avoid "not-used" warnings.
+
+  // Verify that enum types and values get the prefix.
+  GPBTESTTestObjcProtoPrefixEnum value = GPBTESTTestObjcProtoPrefixEnum_Value;
+  XCTAssertNotEqual(value, 0);
+
+  // Verify that roots get the prefix.
+  GPBTESTUnittestObjcOptionsRoot *root = nil;
+  XCTAssertNil(root);
+
+  // Verify that messages that don't already have the prefix get a prefix.
+  GPBTESTTestObjcProtoPrefixMessage *prefixedMessage = nil;
+  XCTAssertNil(prefixedMessage);
+
+  // Verify that messages that already have a prefix aren't prefixed twice.
+  GPBTESTTestHasAPrefixMessage *alreadyPrefixedMessage = nil;
+  XCTAssertNil(alreadyPrefixedMessage);
+
+  // Verify that enums that already have a prefix aren't prefixed twice.
+  GPBTESTTestHasAPrefixEnum prefixedValue = GPBTESTTestHasAPrefixEnum_ValueB;
+  XCTAssertNotEqual(prefixedValue, 0);
+
+  // Verify that classes named the same as prefixes are prefixed.
+  GPBTESTGPBTEST *prefixMessage = nil;
+  XCTAssertNil(prefixMessage);
+
+  // Verify that classes that have the prefix followed by a lowercase
+  // letter DO get the prefix.
+  GPBTESTGPBTESTshouldGetAPrefixMessage *shouldGetAPrefixMessage = nil;
+  XCTAssertNil(shouldGetAPrefixMessage);
 }
 
 @end

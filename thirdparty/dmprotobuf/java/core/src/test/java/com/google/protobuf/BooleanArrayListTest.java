@@ -45,8 +45,7 @@ import junit.framework.TestCase;
  */
 public class BooleanArrayListTest extends TestCase {
 
-  private static final BooleanArrayList UNARY_LIST =
-      newImmutableBooleanArrayList(true);
+  private static final BooleanArrayList UNARY_LIST = newImmutableBooleanArrayList(true);
   private static final BooleanArrayList TERTIARY_LIST =
       newImmutableBooleanArrayList(true, false, true);
 
@@ -141,6 +140,68 @@ public class BooleanArrayListTest extends TestCase {
     }
   }
 
+  public void testIndexOf_nullElement() {
+    assertEquals(-1, TERTIARY_LIST.indexOf(null));
+  }
+
+  public void testIndexOf_incompatibleElementType() {
+    assertEquals(-1, TERTIARY_LIST.indexOf(new Object()));
+  }
+
+  public void testIndexOf_notInList() {
+    assertEquals(-1, UNARY_LIST.indexOf(false));
+  }
+
+  public void testIndexOf_notInListWithDuplicates() {
+    BooleanArrayList listWithDupes = newImmutableBooleanArrayList(true, true);
+    assertEquals(-1, listWithDupes.indexOf(false));
+  }
+
+  public void testIndexOf_inList() {
+    assertEquals(1, TERTIARY_LIST.indexOf(false));
+  }
+
+  public void testIndexOf_inListWithDuplicates_matchAtHead() {
+    BooleanArrayList listWithDupes = newImmutableBooleanArrayList(true, true, false);
+    assertEquals(0, listWithDupes.indexOf(true));
+  }
+
+  public void testIndexOf_inListWithDuplicates_matchMidList() {
+    BooleanArrayList listWithDupes = newImmutableBooleanArrayList(false, true, true, false);
+    assertEquals(1, listWithDupes.indexOf(true));
+  }
+
+  public void testContains_nullElement() {
+    assertEquals(false, TERTIARY_LIST.contains(null));
+  }
+
+  public void testContains_incompatibleElementType() {
+    assertEquals(false, TERTIARY_LIST.contains(new Object()));
+  }
+
+  public void testContains_notInList() {
+    assertEquals(false, UNARY_LIST.contains(false));
+  }
+
+  public void testContains_notInListWithDuplicates() {
+    BooleanArrayList listWithDupes = newImmutableBooleanArrayList(true, true);
+    assertEquals(false, listWithDupes.contains(false));
+  }
+
+  public void testContains_inList() {
+    assertEquals(true, TERTIARY_LIST.contains(false));
+  }
+
+  public void testContains_inListWithDuplicates_matchAtHead() {
+    BooleanArrayList listWithDupes = newImmutableBooleanArrayList(true, true, false);
+    assertEquals(true, listWithDupes.contains(true));
+  }
+
+  public void testContains_inListWithDuplicates_matchMidList() {
+    BooleanArrayList listWithDupes = newImmutableBooleanArrayList(false, true, true, false);
+    assertEquals(true, listWithDupes.contains(true));
+  }
+
   public void testSize() {
     assertEquals(0, BooleanArrayList.emptyList().size());
     assertEquals(1, UNARY_LIST.size());
@@ -226,8 +287,7 @@ public class BooleanArrayListTest extends TestCase {
       list.add(i % 2 == 0);
     }
     assertEquals(
-        asList(false, true, false, false, true, true, false, true, false, true, false),
-        list);
+        asList(false, true, false, false, true, true, false, true, false, true, false), list);
 
     try {
       list.add(-1, true);
@@ -270,6 +330,13 @@ public class BooleanArrayListTest extends TestCase {
     assertFalse(list.addAll(BooleanArrayList.emptyList()));
   }
 
+  public void testEquals() {
+    BooleanArrayList list1 = new BooleanArrayList();
+    BooleanArrayList list2 = new BooleanArrayList();
+
+    assertEquals(list1, list2);
+  }
+
   public void testRemove() {
     list.addAll(TERTIARY_LIST);
     assertEquals(true, (boolean) list.remove(0));
@@ -298,11 +365,20 @@ public class BooleanArrayListTest extends TestCase {
     }
   }
 
-  public void testRemoveEndOfCapacity() {
+  public void testRemoveEnd_listAtCapacity() {
     BooleanList toRemove = BooleanArrayList.emptyList().mutableCopyWithCapacity(1);
     toRemove.addBoolean(true);
     toRemove.remove(0);
     assertEquals(0, toRemove.size());
+  }
+
+  public void testRemove_listAtCapacity() {
+    BooleanList toRemove = BooleanArrayList.emptyList().mutableCopyWithCapacity(2);
+    toRemove.addBoolean(true);
+    toRemove.addBoolean(false);
+    toRemove.remove(0);
+    assertEquals(1, toRemove.size());
+    assertEquals(false, (boolean) toRemove.get(0));
   }
 
   public void testSublistRemoveEndOfCapacity() {
@@ -312,7 +388,7 @@ public class BooleanArrayListTest extends TestCase {
     assertEquals(0, toRemove.size());
   }
 
-  private void assertImmutable(BooleanArrayList list) {
+  private void assertImmutable(BooleanList list) {
 
     try {
       list.add(true);
