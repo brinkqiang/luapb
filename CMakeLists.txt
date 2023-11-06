@@ -8,6 +8,8 @@ INCLUDE(cmake/ModuleCompileOptions.cmake)
 ModuleSetCompileOptions()
 ModuleSetWinCompilerFlags()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 ModuleImport("dmprotobuf" "thirdparty/dmprotobuf")
 ModuleImport("dmyaml" "thirdparty/dmyaml")
 
