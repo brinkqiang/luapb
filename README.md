@@ -100,6 +100,5 @@ local tb_yaml = pb.yaml2table("net.tb_Person", str_yaml)
 
 ```
 ## Contacts
-[![Join the chat](https://badges.gitter.im/brinkqiang/luapb/Lobby.svg)](https://gitter.im/brinkqiang/luapb)
 
 ## Thanks
