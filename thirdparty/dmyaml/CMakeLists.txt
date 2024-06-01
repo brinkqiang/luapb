@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.21)
 
 PROJECT(dmyaml)
 
@@ -19,19 +19,3 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/dmyaml_config.h.in ${CMAKE_CU
 
 ModuleInclude("yaml-cpp" "")
 LibImport("dmyaml" "src")
-#ADD_CUSTOM_COMMAND(
-#TARGET dmyamltest
-#PRE_BUILD
-#COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#${CMAKE_CURRENT_SOURCE_DIR}/config/test.csv
-#$<TARGET_FILE_DIR:dmyamltest>
-#)
-
-#INSTALL(DIRECTORY include/ DESTINATION include)
-#INSTALL(TARGETS dmyaml
-#        RUNTIME DESTINATION bin
-#        LIBRARY DESTINATION lib
-#        ARCHIVE DESTINATION lib)
-
-#SET(DMYAML_LIBS "dmyaml")
-#MARK_AS_ADVANCED(${DMYAML_LIBS})
