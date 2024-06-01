@@ -105,6 +105,7 @@ using namespace stdext;
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -112,7 +113,6 @@ using namespace stdext;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <pthread.h>
 
 #include <signal.h>
 #include <netdb.h>

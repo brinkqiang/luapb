@@ -395,13 +395,17 @@ static std::string DMGetWorkPath() {
     return szPath;
 }
 
-static void DMSetWorkPath() {
-    std::string strPath = DMGetRootPath() + PATH_DELIMITER_STR + ".." + PATH_DELIMITER_STR;
-    chdir(strPath.c_str());
+static bool DMSetWorkPath(std::string& strPath) {
+	if (0 != chdir(strPath.c_str()))
+	{
+		return false;
+	}
+	return true;
 }
 
-static void DMSetWorkPath(std::string& strPath) {
-    chdir(strPath.c_str());
+static void DMSetWorkPath() {
+    std::string strPath = DMGetRootPath() + PATH_DELIMITER_STR + ".." + PATH_DELIMITER_STR;
+    DMSetWorkPath(strPath);
 }
 
 class CDMWorkPathGuard
