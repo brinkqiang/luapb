@@ -37,6 +37,8 @@
 #include "yaml-cpp/emittermanip.h"
 #include "dmutil.h"
 
+#undef GetMessage
+
 using namespace google::protobuf;
 using namespace pugi;
 
@@ -65,7 +67,14 @@ typedef struct tagluarepeatedmsg
     google::protobuf::FieldDescriptor* field;
 } lua_repeated_msg;
 
+typedef struct tagluamapmsg
+{
+    google::protobuf::Message* msg;
+    google::protobuf::FieldDescriptor* field;
+} lua_map_msg;
+
 #define PB_MESSAGE "pb"
+#define PB_MAP_MESSAGE_META "pb_map_meta"
 #define PB_MESSAGE_META "pb_meta"
 
 #define PB_REPEATED_MESSAGE_META "pb_repeated_meta"
@@ -501,6 +510,101 @@ static int pb_tostring(lua_State* L)
     return 1;
 }
 
+static int pb_map_add(lua_State* L)
+{
+    lua_map_msg* map = (lua_map_msg*)luaL_checkudata(L, 1, PB_MAP_MESSAGE_META);
+    google::protobuf::Message* message = map->msg;
+
+    if (!message)
+    {
+        luaL_argerror(L, 1, "pb_map_add: pb msg is nil");
+        return 0;
+    }
+
+    const FieldDescriptor* field = map->field;
+    const Reflection* reflection = message->GetReflection();
+    luaL_argcheck(L, field != nullptr, 1, "pb_map_add: field is null");
+
+    // 确保字段类型为Message且为Map类型
+    if (field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE || !field->is_map())
+    {
+        luaL_argerror(L, 1, "pb_map_add: field must be a map message type");
+        return 0;
+    }
+
+    // 获取Map条目的原型
+    const Message* prototype = reflection->GetMessageFactory()->GetPrototype(field->message_type());
+    if (!prototype)
+    {
+        luaL_argerror(L, 1, "pb_map_add: failed to get map entry prototype");
+        return 0;
+    }
+
+    // 添加新条目到Map并推入Lua栈
+    Message* new_entry = reflection->AddMessage(message, field, reflection->GetMessageFactory());
+    return push_message(L, new_entry, false);
+}
+
+static int pb_map_get(lua_State* L)
+{
+    lua_map_msg* map = (lua_map_msg*)luaL_checkudata(L, 1, PB_MAP_MESSAGE_META);
+    google::protobuf::Message* message = map->msg;
+
+    if (!message)
+    {
+        luaL_argerror(L, 1, "pb_map_get, pb msg is nil");
+        return 0;
+    }
+
+    const Reflection* reflection = message->GetReflection();
+    FieldDescriptor* field = map->field;
+    luaL_argcheck(L, field != NULL, 1, "pb_map_get field not exist");
+
+    const char* key = luaL_checkstring(L, 2);
+    Message* msg = reflection->MutableMessage(message, field);
+    const FieldDescriptor* key_field = msg->GetDescriptor()->FindFieldByName("key");
+    const FieldDescriptor* value_field = msg->GetDescriptor()->FindFieldByName("value");
+
+    if (!key_field || !value_field)
+    {
+        luaL_argerror(L, 1, "pb_map_get, map message must have key and value fields");
+        return 0;
+    }
+
+    reflection->SetString(msg, key_field, key);
+    return push_message(L, msg, false);
+}
+
+static int pb_map_set(lua_State* L)
+{
+    lua_map_msg* map = (lua_map_msg*)luaL_checkudata(L, 1, PB_MAP_MESSAGE_META);
+    google::protobuf::Message* message = map->msg;
+
+    if (!message)
+    {
+        luaL_argerror(L, 1, "pb_map_set, pb msg is nil");
+        return 0;
+    }
+
+    const Reflection* reflection = message->GetReflection();
+    FieldDescriptor* field = map->field;
+    luaL_argcheck(L, field != NULL, 1, "pb_map_set field not exist");
+
+    const char* key = luaL_checkstring(L, 2);
+    Message* msg = reflection->MutableMessage(message, field);
+    const FieldDescriptor* key_field = msg->GetDescriptor()->FindFieldByName("key");
+    const FieldDescriptor* value_field = msg->GetDescriptor()->FindFieldByName("value");
+
+    if (!key_field || !value_field)
+    {
+        luaL_argerror(L, 1, "pb_map_set, map message must have key and value fields");
+        return 0;
+    }
+
+    reflection->SetString(msg, key_field, key);
+    return 0;
+}
+
 static int pb_get(lua_State* L)
 {
     lua_pbmsg* luamsg = (lua_pbmsg*)luaL_checkudata(L, 1, PB_MESSAGE_META);
@@ -519,7 +623,16 @@ static int pb_get(lua_State* L)
     const google::protobuf::FieldDescriptor* field = descriptor->FindFieldByName(field_name);
     luaL_argcheck(L, (field != NULL), 2, "pb_get, field_name error");
 
-    if (field->is_repeated())
+    if (field->is_map())
+    {
+        lua_map_msg* map = (lua_map_msg*)lua_newuserdata(L, sizeof(lua_map_msg));
+        map->msg = message;
+        map->field = const_cast<FieldDescriptor*>(field);
+        luaL_getmetatable(L, PB_MAP_MESSAGE_META);
+        lua_setmetatable(L, -2);
+        return 1;
+    }
+    else if (field->is_repeated())
     {
         return push_repeated_msg(L, message, const_cast<FieldDescriptor*>(field));
     }
@@ -2068,10 +2181,28 @@ static const struct luaL_Reg repeatedlib[] = {
     {NULL, NULL},
 };
 
+static const struct luaL_Reg maplib[] = {
+    {"add", pb_map_add},
+    {"get", pb_map_get},
+    {"set", pb_map_set},
+    {NULL, NULL},
+};
+
 LUAMOD_API int luaopen_luapb(lua_State* L)
 {
     luaL_newmetatable(L, PB_REPEATED_MESSAGE_META);
     luaL_register(L, NULL, repeatedlib);
+
+    lua_pushstring(L, "__index");
+    lua_pushvalue(L, -2);
+    lua_settable(L, -3);
+
+    lua_pushstring(L, "__newindex");
+    lua_pushcfunction(L, pb_repeated_set);
+    lua_settable(L, -3);
+
+    luaL_newmetatable(L, PB_MAP_MESSAGE_META);
+    luaL_register(L, NULL, maplib);
 
     lua_pushstring(L, "__index");
     lua_pushvalue(L, -2);

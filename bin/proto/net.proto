@@ -33,5 +33,6 @@ message tb_Person {
   PhoneType ptype = 4;
   repeated string desc = 5;
   repeated tb_JobInfo jobs = 6;
+  map<string, string> properties = 7;
 }
 // [END messages]

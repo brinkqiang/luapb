@@ -28,7 +28,17 @@ function pb_table_yaml()
                 jobtype = 9527,
                 jobdesc = "coder2"
             }
-        }
+        },
+        properties = {
+            {
+                key = "role",
+                value = "admin"
+            },
+            {
+                key = "role2",
+                value = "admin"
+            }
+        }        
     }
 
     local yaml = pb.table2yaml("net.tb_Person", message)
@@ -107,6 +117,14 @@ function pb_cpp_test()
     job2.jobtype = 9527
     job2.jobdesc = "coder2"
 
+    local entry1 = msg.properties:add()
+    entry1.key = "role"
+    entry1.value = "admin"
+
+    local entry2 = msg.properties:add()
+    entry2.key = "role2"
+    entry2.value = "admin"
+
     local buffer = pb.serializeToString(msg)
     print("pb_cpp_test pass #v1\n" ..  pb.tostring(msg))
     local msg2 = pb.new("net.tb_Person")
@@ -130,6 +148,16 @@ function pb_table_test()
             {
                 jobtype = 9527,
                 jobdesc = "coder2"
+            }
+        },
+        properties = {
+            {
+                key = "role",
+                value = "admin"
+            },
+            {
+                key = "role2",
+                value = "admin"
             }
         }
     }
@@ -156,10 +184,10 @@ function pb_table_test()
     local xml3 = pb.json2xml("net.tb_Person", json3)
     print("json2xml # \n" .. xml3)
 
-    for k, v in pairs(message) do
-        print(type(v))
-        print(k)
-    end
+    -- for k, v in pairs(message) do
+    --     print(type(v))
+    --     print(k)
+    -- end
 
     local buffer = pb.encode("net.tb_Person", message)
     local msg = pb.decode("net.tb_Person", buffer)
@@ -174,6 +202,15 @@ function pb_table_test()
     assert(msg.desc[1] == "first")
     assert(msg.desc[2] == "second")
     assert(msg.desc[3] == "three")
+    assert(msg.jobs[1].jobtype == 8345)
+    assert(msg.jobs[2].jobtype == 9527)
+    assert(msg.jobs[1].jobdesc == "coder")
+    assert(msg.jobs[2].jobdesc == "coder2")
+    assert(msg.properties[1].key == "role")
+    assert(msg.properties[2].key == "role2")
+    assert(msg.properties[1].value == "admin")
+    assert(msg.properties[2].value == "admin")
+    
     print("pb_table_test pass #\n" ..  pb.tostring(msg2))
 end
 
@@ -229,9 +266,9 @@ function pb_table_test_million()
     print("pb_table_test_million pass")
 end
 
---pb_table_yaml()
+pb_table_yaml()
 pb_cpp_test()
---pb_table_test()
+pb_table_test()
 
 --pb_cpp_test_million()
 --pb_table_test_million()
