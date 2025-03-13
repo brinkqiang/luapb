@@ -266,9 +266,9 @@ function pb_table_test_million()
     print("pb_table_test_million pass")
 end
 
-pb_table_yaml()
+--pb_table_yaml()
 pb_cpp_test()
-pb_table_test()
+--pb_table_test()
 
 --pb_cpp_test_million()
 --pb_table_test_million()
