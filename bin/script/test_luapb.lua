@@ -53,6 +53,3 @@ end
 test_luapb_encode(100000)
 test_luapb_decode(100000)
 
---testn(1000000,pb.encode,"Person",data)
---testn(1000000,pb.decode,"Person",chunk)
-
