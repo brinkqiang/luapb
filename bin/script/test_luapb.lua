@@ -23,7 +23,7 @@ function test_luapb_encode(num)
     for i=1,num do
         local buf = pb.serializeToString(msg)
     end 
-    print("num=".. num .."\ttime="..os.clock()-t1)
+    print("test_luapb_encode num=".. num .."\ttime="..os.clock()-t1)
 end 
 
 function test_luapb_decode(num)
@@ -47,7 +47,7 @@ function test_luapb_decode(num)
     for i=1,num do
         pb.parseFromString(msg, chunk)
     end 
-    print("num=".. num .."\ttime="..os.clock()-t1)
+    print("test_luapb_decode num=".. num .."\ttime="..os.clock()-t1)
 end 
 
 test_luapb_encode(1000000)
