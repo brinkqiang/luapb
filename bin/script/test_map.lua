@@ -128,8 +128,13 @@ function pb_cpp_test()
     entry2.key = "role2"
     entry2.value = "admin"
 
-    local key1 = msg.properties:get("role")
-    print("key1.value = " .. key1.value)
+    local entry = msg.properties:get("role")
+    print("entry.key = " .. entry.key)
+    print("entry.value = " .. entry.value)
+
+    local entry = msg.properties:get("role2")
+    print("entry.key = " .. entry.key)
+    print("entry.value = " .. entry.value)
 
     local buffer = pb.serializeToString(msg)
     print("pb_cpp_test pass #v1\n" ..  pb.tostring(msg))

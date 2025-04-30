@@ -561,18 +561,28 @@ static int pb_map_get(lua_State* L)
     luaL_argcheck(L, field != NULL, 1, "pb_map_get field not exist");
 
     const char* key = luaL_checkstring(L, 2);
-    Message* msg = reflection->MutableMessage(message, field);
-    const FieldDescriptor* key_field = msg->GetDescriptor()->FindFieldByName("key");
-    const FieldDescriptor* value_field = msg->GetDescriptor()->FindFieldByName("value");
+    // Map字段实际是repeated条目
+    const RepeatedPtrField<Message>& entries = reflection->GetRepeatedPtrField<Message>(*message, field);
+    const Descriptor* entry_desc = field->message_type();
+    const FieldDescriptor* key_field = entry_desc->FindFieldByName("key");
+    const FieldDescriptor* value_field = entry_desc->FindFieldByName("value");
 
-    if (!key_field || !value_field)
+    if (!key_field || !value_field || !field->is_repeated())
     {
         luaL_argerror(L, 1, "pb_map_get, map message must have key and value fields");
         return 0;
     }
 
-    reflection->SetString(msg, key_field, key);
-    return push_message(L, msg, false);
+    // 遍历查找匹配key的条目
+    for (const Message& entry : entries) {
+        if (entry.GetReflection()->GetString(entry, key_field) == key) {
+            return push_message(L, const_cast<Message*>(&entry), false);
+        }
+    }
+    
+    // 未找到返回nil
+    lua_pushnil(L);
+    return 1;
 }
 
 static int pb_map_set(lua_State* L)
