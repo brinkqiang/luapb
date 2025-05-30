@@ -1,4 +1,4 @@
-
+﻿
 // Copyright (c) 2018 brinkqiang (brink.qiang@gmail.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,8 +19,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "luapb_module.h"
-#include "protoimporter.h"
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor_database.h>
@@ -31,10 +29,13 @@
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/util/json_util.h>
 
+#include "luapb_module.h"
+#include "protoimporter.h"
+
 #include "pugixml.hpp"
-#include <fstream>
 #include "yaml-cpp/yaml.h"
 #include "yaml-cpp/emittermanip.h"
+
 #include "dmutil.h"
 
 #undef GetMessage
